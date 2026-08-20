@@ -211,7 +211,7 @@ body{background:#fff!important}
 </div>
 </div>
 
-<!-- ══════════════ MODAL ══════════════ -->
+<!-- ══════════════ MODAL DETAIL ══════════════ -->
 <div id="modalWrap" class="hidden fixed inset-0 z-[70]">
 <div class="absolute inset-0 bg-[#0b1220]/60 backdrop-blur-[2px]"></div>
 <div class="relative h-full flex items-center justify-center p-4 pointer-events-none">
@@ -233,7 +233,7 @@ body{background:#fff!important}
 KONFIGURASI SUPABASE & SKEMA RESMI (SESUAI DOKUMEN KONSEP)
 ══════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://saqkbolpvteusjbkkfur.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhcWtib2xwdnRldXNqYmtrZnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMjU3ODksImV4cCI6MjEwMjcwMTc4OX0.hQ-QJTpCw14D2RZVWsjB2-6ig9ix1Y0mR9oPYVtbf70';
+const SUPABASE_KEY = 'sb_publishable_2FF2H_NEjFkQH865UAIYKA_01V6_Ut1';
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const JOP_CATS=[['0','Sticker Flexo'],['1','School Supply'],['2','Office Supply'],['3','Kertas Surat'],['4','Envelope'],['5','Gift Wrap'],['6','Others'],['7','Jasa'],['8','Export'],['9','Carton Box']];
@@ -249,7 +249,7 @@ const FORMS=[
 const SHEETS={
 db_ctcp:{label:'CTCP',color:'#8b5cf6',unit:'Plate',desc:'Computer-to-Conventional Plate',
 headers:['id_ctcp','jop_name','no_jop','no_plate','date','mesin_expose','mesin_cetak','jenis_kertas','plate_baru','plate_ganti','plate_baik','plate_rusak','sebab_ganti','permintaan_khusus','sebab_rusak','shift','nama_op','nama_po'],
-i:{id:0,jop:1,nojop:2,date:4,baik:10,rusak:11,ganti:12,penyGanti:12,penyRusak:14,shift:15,op:16},
+i:{id:0,jop:1,nojop:2,date:4,baik:10,rusak:11,ganti:9,penyGanti:12,penyRusak:14,shift:15,op:16},
 dataCols:[0,1,2,3,4],
 cards:{baik:'Total Plate Baik',rusak:'Total Plate Rusak',ganti:'Total Plate Ganti',pakai:'Total Penggunaan Plate'},
 charts:{daily:'Penggunaan Plate Harian',extra:{kind:'bar',title:'Mesin Expose',col:5}}},
@@ -377,7 +377,7 @@ function fmtPeriodRange(from,to){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-AKSES & NORMALISASI SUPABASE DATABASE
+AKSES & NORMALISASI SUPABASE DATABASE (PAGINATION AUTO-FETCH)
 ══════════════════════════════════════════════════════════════════ */
 function setSheetStat(key,stat){
   state.mode[key]=stat;
@@ -393,6 +393,38 @@ function buildSheetStatusUI(){
 function setLoginStatus(msg,warn){
   const el=qs('loginStatus');if(!el)return;
   el.innerHTML='<span class="w-2 h-2 rounded-full '+(warn?'bg-amber-400':'bg-emerald-400')+'"></span>'+esc(msg);
+}
+
+// Fetch all rows bypassing 1000 records limitation
+async function fetchAllRows(tableName) {
+  let allRows = [];
+  let from = 0;
+  const step = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await sbClient
+      .from(tableName)
+      .select('*')
+      .range(from, from + step - 1);
+
+    if (error) {
+      console.error(`Error fetch ${tableName} (offset: ${from}):`, error);
+      throw error;
+    }
+
+    if (data && data.length > 0) {
+      allRows = allRows.concat(data);
+      if (data.length < step) {
+        hasMore = false;
+      } else {
+        from += step;
+      }
+    } else {
+      hasMore = false;
+    }
+  }
+  return allRows;
 }
 
 function mapRowToMatrix(row, key) {
@@ -439,8 +471,7 @@ async function loadAllData(){
 
     await Promise.all(ALL_KEYS.map(async k => {
       try {
-        const { data, error } = await sbClient.from(k).select('*');
-        if (error) throw error;
+        const data = await fetchAllRows(k);
 
         if (k === 'db_user') {
           state.data[k] = (data || []).map(r => [
@@ -548,7 +579,7 @@ async function doSignup(e){
   try {
     const { error } = await sbClient.from('db_user').insert([{
       id: 'USER' + Date.now().toString().slice(-6),
-      username: u,
+      user: u,
       role: role,
       password: p
     }]);
