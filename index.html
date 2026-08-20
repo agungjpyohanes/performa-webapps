@@ -388,30 +388,57 @@ el.innerHTML='<span class="w-2 h-2 rounded-full '+(warn?'bg-amber-400':'bg-emera
 }
 
 async function loadAllData(){
-  try{
+  try {
     setLoginStatus('Menghubungkan ke Supabase...');
+    
+    // Normalisasi string untuk pencocokan header
+    const cleanStr = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     await Promise.all(ALL_KEYS.map(async k => {
       try {
         const { data, error } = await sbClient.from(k).select('*');
         if (error) throw error;
         
         if (k === 'db_user') {
-          state.data[k] = (data || []).map(r => [r.username, r.role, r.password, r.id]);
+          state.data[k] = (data || []).map(r => [
+            r.username || r.user || '',
+            r.role || 'USER',
+            r.password || '',
+            r.id || ''
+          ]);
         } else {
           const cfg = SHEETS[k];
-          // Transform object array ke format matriks 2D sesuai headers
+          // Transform object JSON Supabase ke array matriks sesuai indeks template
           state.data[k] = (data || []).map(row => {
             const arr = new Array(cfg.headers.length).fill('');
+            
             Object.keys(row).forEach(field => {
-              const matchedIdx = cfg.headers.findIndex(h => h.toLowerCase().replace(/[^a-z0-9]/g,'') === field.toLowerCase().replace(/[^a-z0-9]/g,''));
-              if(matchedIdx !== -1) arr[matchedIdx] = row[field];
+              const fieldClean = cleanStr(field);
+              
+              // 1. Cocokkan dengan nama header UI
+              let matchedIdx = cfg.headers.findIndex(h => cleanStr(h) === fieldClean);
+              
+              // 2. Fallback khusus untuk variasi nama kolom tanggal & status
+              if (matchedIdx === -1) {
+                if (['date', 'tanggal', 'tgl', 'createdat', 'created_at'].includes(fieldClean)) {
+                  matchedIdx = cfg.i.date;
+                } else if (['status', 'statuspekerjaan', 'stat'].includes(fieldClean) && cfg.i.status !== undefined) {
+                  matchedIdx = cfg.i.status;
+                }
+              }
+
+              if (matchedIdx !== -1) {
+                arr[matchedIdx] = row[field];
+              }
             });
             return arr;
           });
         }
+        
         state.mode[k] = state.data[k].length ? 'live' : 'empty';
         setSheetStat(k, state.mode[k]);
       } catch(e) {
+        console.error(`Gagal memuat tabel ${k}:`, e);
         state.data[k] = [];
         state.mode[k] = 'fail';
         setSheetStat(k, 'fail');
@@ -419,9 +446,9 @@ async function loadAllData(){
     }));
     
     setLoginStatus('✓ Terhubung ke Database Supabase.');
-    const ai=qs('acctInfo');
-    if(ai) ai.innerHTML='✓ '+(state.data.db_user.length)+' akun db_user termuat dari Supabase.';
-    try{state.period=computeSmartPeriod();}catch(e){}
+    const ai = qs('acctInfo');
+    if (ai) ai.innerHTML = '✓ ' + (state.data.db_user.length) + ' akun db_user termuat dari Supabase.';
+    try { state.period = computeSmartPeriod(); } catch(e) {}
     return true;
   } catch(err) {
     setLoginStatus('Gagal membaca database Supabase', true);
