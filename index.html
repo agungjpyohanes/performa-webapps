@@ -107,7 +107,7 @@ body{background:#fff!important}
 <div class="relative z-10">
 <img class="w-24 h-24 rounded-2xl bg-white p-2 shadow-2xl" src="https://drive.google.com/thumbnail?id=1lH4lh1q8CrraoC1fMY1q7tf3B0nezFiJ&sz=w512" onerror="this.onerror=null;this.src='https://image.qwenlm.ai/public_source/b80abd5e-1a20-4fc0-8aae-53ae6b2cea75/18b884b9e-d53b-4753-821d-35bf8f6b6f9d.png'" alt="logo main">
 <h1 class="font-display text-5xl font-extrabold leading-tight mt-6">Performa<br>Produksi</h1>
-<p class="mt-4 text-slate-300 max-w-md text-sm leading-relaxed">Pusat kendali data produksi prepress — monitoring plate CTCP & CTP, screen, flexo, dan etching terintegrasi Supabase PostgreSQL & Google Sheets.</p>
+<p class="mt-4 text-slate-300 max-w-md text-sm leading-relaxed">Pusat kendali data produksi prepress — monitoring plate CTCP & CTP, screen, flexo, dan etching terintegrasi Supabase PostgreSQL.</p>
 <div class="mt-7 flex gap-2 flex-wrap text-[11px] font-semibold">
 <span class="badge bg-white/10 text-white"><span class="w-2 h-2 rounded-full" style="background:#8b5cf6"></span>CTCP</span>
 <span class="badge bg-white/10 text-white"><span class="w-2 h-2 rounded-full" style="background:#10b981"></span>CTP</span>
@@ -230,7 +230,7 @@ body{background:#fff!important}
 'use strict';
 
 /* ══════════════════════════════════════════════════════════════════
-KONFIGURASI SUPABASE & SKEMA
+KONFIGURASI SUPABASE & SKEMA RESMI (SESUAI DOKUMEN KONSEP)
 ══════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://saqkbolpvteusjbkkfur.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhcWtib2xwdnRldXNqYmtrZnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMjU3ODksImV4cCI6MjEwMjcwMTc4OX0.hQ-QJTpCw14D2RZVWsjB2-6ig9ix1Y0mR9oPYVtbf70';
@@ -241,42 +241,42 @@ const CAT_COLORS=['#06b6d4','#6366f1','#f59e0b','#8b5cf6','#10b981','#f97316','#
 const FORMS=[
 {key:'db_ctcp',label:'CTCP',url:'https://forms.gle/sjXvX1mQLmfconpaA'},
 {key:'db_ctp',label:'CTP',url:'https://forms.gle/Y2iumgVVMk8Ph8Ez8'},
-{key:'db_screen',label:'SCREEN',url:'https://forms.gle/KUBCCpbE9ocRKUgC9'},
+{key:'db_screen',label:'SCREEN',url:'https://forms.gle/KUBCCpbE90cRKUgC9'},
 {key:'db_flexo',label:'FLEXO',url:'https://forms.gle/yux9WXnftA4isDW77'},
 {key:'db_etching',label:'ETCHING',url:'https://forms.gle/JLu6gVW3qcCv5xvR8'}
 ];
 
 const SHEETS={
 db_ctcp:{label:'CTCP',color:'#8b5cf6',unit:'Plate',desc:'Computer-to-Conventional Plate',
-headers:['ID CTCP','JOP NAME','NO JOP','NO PLATE','DATE','MESIN EXPOSE','MESIN CETAK','JENIS KERTAS','PLATE BARU','PLATE GANTI','PLATE BAIK','PLATE RUSAK','PENYEBAB GANTI','PERMINTAAN KHUSUS','PENYEBAB RUSAK','SHIFT','NAMA OP','NAMA PO'],
-i:{id:0,jop:1,nojop:2,date:4,baik:10,rusak:11,ganti:9,penyGanti:12,penyRusak:14,shift:15,op:16},
+headers:['id_ctcp','jop_name','no_jop','no_plate','date','mesin_expose','mesin_cetak','jenis_kertas','plate_baru','plate_ganti','plate_baik','plate_rusak','sebab_ganti','permintaan_khusus','sebab_rusak','shift','nama_op','nama_po'],
+i:{id:0,jop:1,nojop:2,date:4,baik:10,rusak:11,ganti:12,penyGanti:12,penyRusak:14,shift:15,op:16},
 dataCols:[0,1,2,3,4],
 cards:{baik:'Total Plate Baik',rusak:'Total Plate Rusak',ganti:'Total Plate Ganti',pakai:'Total Penggunaan Plate'},
 charts:{daily:'Penggunaan Plate Harian',extra:{kind:'bar',title:'Mesin Expose',col:5}}},
 
 db_ctp:{label:'CTP',color:'#10b981',unit:'Plate',desc:'Computer-to-Plate',
-headers:['ID CTP','JOP NAME','NO JOP','NO PLATE','DATE','MESIN EXPOSE','MESIN CETAK','JENIS KERTAS','PLATE BARU','PLATE GANTI','PLATE BAIK','PLATE RUSAK','PENYEBAB GANTI','PERMINTAAN KHUSUS','PENYEBAB RUSAK','SHIFT','NAMA OP'],
+headers:['id_ctp','jop_name','no_jop','no_plate','date','mesin_expose','mesin_cetak','jenis_kertas','plate_baru','plate_ganti','plate_baik','plate_rusak','sebab_ganti','permintaan_khusus','sebab_rusak','shift','nama_op'],
 i:{id:0,jop:1,nojop:2,date:4,baik:10,rusak:11,ganti:9,penyGanti:12,penyRusak:14,shift:15,op:16},
 dataCols:[0,1,2,3,4],
 cards:{baik:'Total Plate Baik',rusak:'Total Plate Rusak',ganti:'Total Plate Ganti',pakai:'Total Penggunaan Plate'},
 charts:{daily:'Penggunaan Plate Harian',extra:null}},
 
 db_screen:{label:'SCREEN',color:'#06b6d4',unit:'Screen',desc:'Screen / sablon',
-headers:['ID SCREEN','JOP NAME','NO JOP','NO B','TIPE','STATUS','DATE','JUMLAH SCREEN BAGUS','JUMLAH SCREEN RUSAK','JUMLAH SCREEN GANTI','PENYEBAB RUSAK','PENYEBAB GANTI','SHIFT','NAMA OP'],
+headers:['id_screen','jop_name','no_jop','no_b','tipe','status','date','jumlah_screen_bagus','jumlah_screen_rusak','jumlah_screen_ganti','sebab_rusak','sebab_ganti','shift','nama_op'],
 i:{id:0,jop:1,nojop:2,tipe:4,status:5,date:6,baik:7,rusak:8,ganti:9,penyRusak:10,penyGanti:11,shift:12,op:13},
 dataCols:[0,1,2,3,4,6],
 cards:{baik:'Total Screen Baik',rusak:'Total Screen Rusak',ganti:'Total Screen Ganti',pakai:'Total Produksi Screen'},
 charts:{daily:'Produksi Screen Harian',extra:{kind:'donut',title:'Kategori Jenis Screen',col:4}}},
 
 db_flexo:{label:'FLEXO',color:'#6366f1',unit:'Flexo',desc:'Flexography',
-headers:['ID FLEXO','JOP NAME','NO JOP','NO B','STATUS','DATE','LPI','TEBAL FLEXO','NAMA MESIN CETAK','POSISI RIP','FLEXO BAGUS','FLEXO RUSAK','FLEXO GANTI','PENYEBAB RUSAK','PENYEBAB GANTI','SHIFT','NAMA OP','NAMA PO'],
+headers:['id_flexo','jop_name','no_jop','no_b','status','date','lpi','tebal_flexo','mesin_cetak','posisi_rip','flexo_bagus','flexo_rusak','flexo_ganti','sebab_rusak','sebab_ganti','shift','nama_op','nama_po'],
 i:{id:0,jop:1,nojop:2,status:4,date:5,lpi:6,tebal:7,baik:10,rusak:11,ganti:12,penyRusak:13,penyGanti:14,shift:15,op:16},
 dataCols:[0,1,2,3,5],
 cards:{baik:'Total Flexo Baik',rusak:'Total Flexo Rusak',ganti:'Total Flexo Ganti',pakai:'Total Produksi Flexo'},
 charts:{daily:'Produksi Flexo Harian',extra:{kind:'donut',title:'Kategori Tebal Flexo',col:7}}},
 
 db_etching:{label:'ETCHING',color:'#f59e0b',unit:'Plate',desc:'Plate etching',
-headers:['ID ETCHING','JOP NAME','NO JOP','NO B','TIPE','STATUS','DATE','TEBAL PLATE','PLATE BAIK','PLATE RUSAK','PLATE GANTI','PENYEBAB RUSAK','PENYEBAB GANTI','SHIFT','NAMA OP','NAMA PO'],
+headers:['id_etching','jop_name','no_jop','no_b','tipe','status','date','tebal_plate','plate_baik','plate_rusak','plate_ganti','sebab_rusak','sebab_ganti','shift','nama_op','nama_po'],
 i:{id:0,jop:1,nojop:2,tipe:4,status:5,date:6,tebal:7,baik:8,rusak:9,ganti:10,penyRusak:11,penyGanti:12,shift:13,op:14},
 dataCols:[0,1,2,3,4,6],
 cards:{baik:'Total Plate Baik',rusak:'Total Plate Rusak',ganti:'Total Plate Ganti',pakai:'Total Produksi Plate'},
@@ -329,7 +329,6 @@ function parseDateVal(v){
   if(v==null||v==='') return null;
   if(v instanceof Date) return isNaN(v.getTime()) ? null : v;
   const s=String(v).trim();
-  // Tangani format DD/MM/YYYY atau DD-MM-YYYY
   const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
   if(m){
     let y=+m[3]; if(y<100) y+=2000;
@@ -396,7 +395,6 @@ function setLoginStatus(msg,warn){
   el.innerHTML='<span class="w-2 h-2 rounded-full '+(warn?'bg-amber-400':'bg-emerald-400')+'"></span>'+esc(msg);
 }
 
-// Engine pencocokan kolom PostgreSQL Supabase -> Header Matrix UI
 function mapRowToMatrix(row, key) {
   const cfg = SHEETS[key];
   const arr = new Array(cfg.headers.length).fill('');
@@ -405,26 +403,23 @@ function mapRowToMatrix(row, key) {
   Object.entries(row).forEach(([colName, val]) => {
     if (colName === 'Sync_Status' || colName === 'created_at') return;
     const colClean = clean(colName);
-
-    // 1. Direct clean match
     let idx = cfg.headers.findIndex(h => clean(h) === colClean);
 
-    // 2. Semantic matching untuk kolom krusial
     if (idx === -1) {
-      if (colClean.includes('id') && !colClean.includes('penyebab')) idx = cfg.i.id;
-      else if (colClean.includes('nojop') || colClean.includes('no_jop') || colClean === 'jopno') idx = cfg.i.nojop;
-      else if (colClean.includes('jopname') || colClean.includes('namajob') || colClean.includes('namajop') || colClean === 'jop') idx = cfg.i.jop;
-      else if (['tanggal', 'date', 'tgl', 'tgl_job', 'tglexpose'].includes(colClean)) idx = cfg.i.date;
-      else if (colClean.includes('baik') || colClean.includes('bagus') || colClean === 'ok') idx = cfg.i.baik;
-      else if (colClean.includes('rusak') || colClean.includes('reject') || colClean === 'ng') idx = cfg.i.rusak;
-      else if (colClean.includes('ganti') || colClean.includes('remake')) idx = cfg.i.ganti;
-      else if (colClean.includes('penyebabrusak') || colClean.includes('alasanrusak')) idx = cfg.i.penyRusak;
-      else if (colClean.includes('penyebabganti') || colClean.includes('alasanganti')) idx = cfg.i.penyGanti;
+      if (colClean.includes('id') && !colClean.includes('penyebab') && !colClean.includes('sebab')) idx = cfg.i.id;
+      else if (colClean.includes('nojop') || colClean.includes('no_jop')) idx = cfg.i.nojop;
+      else if (colClean.includes('jopname') || colClean.includes('jop_name')) idx = cfg.i.jop;
+      else if (['tanggal', 'date', 'tgl', 'created_at'].includes(colClean)) idx = cfg.i.date;
+      else if (colClean.includes('baik') || colClean.includes('bagus')) idx = cfg.i.baik;
+      else if (colClean.includes('rusak')) idx = cfg.i.rusak;
+      else if (colClean.includes('ganti')) idx = cfg.i.ganti;
+      else if (colClean.includes('sebabrusak') || colClean.includes('penyebabrusak')) idx = cfg.i.penyRusak;
+      else if (colClean.includes('sebabganti') || colClean.includes('penyebabganti')) idx = cfg.i.penyGanti;
       else if (colClean.includes('status')) idx = cfg.i.status !== undefined ? cfg.i.status : -1;
       else if (colClean.includes('shift')) idx = cfg.i.shift;
-      else if (colClean === 'op' || colClean.includes('namaop') || colClean.includes('operator')) idx = cfg.i.op;
+      else if (colClean.includes('namaop') || colClean.includes('nama_op')) idx = cfg.i.op;
       else if (colClean.includes('tebal')) idx = cfg.i.tebal !== undefined ? cfg.i.tebal : -1;
-      else if (colClean.includes('tipe') || colClean.includes('jenis')) idx = cfg.i.tipe !== undefined ? cfg.i.tipe : -1;
+      else if (colClean.includes('tipe')) idx = cfg.i.tipe !== undefined ? cfg.i.tipe : -1;
     }
 
     if (idx !== -1 && idx < arr.length) {
@@ -432,9 +427,8 @@ function mapRowToMatrix(row, key) {
     }
   });
 
-  // Fallback ID jika kosong
   if (!arr[cfg.i.id]) {
-    arr[cfg.i.id] = row.id || row.id_job || row.id_ctp || row.id_ctcp || row.id_screen || row.id_flexo || row.id_etching || '-';
+    arr[cfg.i.id] = row.id || row.id_ctp || row.id_ctcp || row.id_screen || row.id_flexo || row.id_etching || '-';
   }
   return arr;
 }
@@ -450,7 +444,7 @@ async function loadAllData(){
 
         if (k === 'db_user') {
           state.data[k] = (data || []).map(r => [
-            r.username || r.user || '',
+            r.user || r.username || '',
             r.role || 'USER',
             r.password || '',
             r.id || ''
@@ -473,7 +467,6 @@ async function loadAllData(){
     const ai = qs('acctInfo');
     if (ai) ai.innerHTML = '✓ ' + (state.data.db_user.length) + ' akun db_user termuat dari Supabase.';
     
-    // Set periode awal otomatis berdasarkan data aktual di Supabase
     state.period = computeSmartPeriod();
     setPeriodInputs();
     return true;
@@ -484,7 +477,7 @@ async function loadAllData(){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-AUTENTIKASI & IDLE TIMER
+AUTENTIKASI & IDLE TIMER (15 MENIT & PER-SESSION)
 ══════════════════════════════════════════════════════════════════ */
 const BUILTIN_ACCOUNTS=[{USER:'demo',ROLE:'USER',PASSWORD:'123',demo:true}];
 function getAllUsers(){
@@ -512,7 +505,7 @@ function enterApp(){
 }
 
 function logout(){
-  localStorage.removeItem('pf_session');
+  sessionStorage.removeItem('pf_session');
   state.user=null;state.entered=false;destroyCharts();
   clearIdleTimer();
   qs('appView').classList.add('hidden');
@@ -536,7 +529,7 @@ async function doLogin(e){
       return;
     }
     state.user={USER:found.USER,ROLE:found.ROLE,demo:!!found.demo};
-    localStorage.setItem('pf_session',JSON.stringify(state.user));
+    sessionStorage.setItem('pf_session',JSON.stringify(state.user));
     enterApp();
   }catch(err){
     toast('Terjadi kesalahan saat login — coba lagi','err');
@@ -560,7 +553,7 @@ async function doSignup(e){
       password: p
     }]);
     if(error) throw error;
-    toast('Akun "' + esc(u) + '" berhasil dibuat di Supabase — silakan masuk', 'ok');
+    toast('Akun "' + esc(u) + '" berhasil didaftarkan ke db_user — silakan masuk', 'ok');
     await loadAllData();
     qs('ls_user').value='';qs('ls_pass').value='';qs('ls_pass2').value='';
     qs('tabLogin').click();qs('lu_user').value=u;qs('lu_pass').focus();
@@ -573,7 +566,7 @@ const IDLE_TIMEOUT=15*60*1000;
 const IDLE_WARN=13*60*1000;
 function startIdleTimer(){
   clearIdleTimer();
-  state.idleWarnTimer=setTimeout(()=>{toast('⚠ Sesi akan berakhir dalam 2 menit — klik untuk melanjutkan','warn');},IDLE_WARN);
+  state.idleWarnTimer=setTimeout(()=>{toast('⚠ Sesi akan berakhir dalam 2 menit — lakukan aktivitas untuk melanjutkan','warn');},IDLE_WARN);
   state.idleTimer=setTimeout(()=>{toast('⏱ Sesi berakhir karena idle 15 menit','warn');logout();},IDLE_TIMEOUT);
   ['mousemove','keydown','click','scroll','touchstart'].forEach(ev=>document.addEventListener(ev,resetIdleTimer));
 }
@@ -601,12 +594,9 @@ function computeSmartPeriod(){
     const cur=new Date();
     return {from: new Date(cur.getFullYear(), cur.getMonth(), 1), to: cur};
   }
-  // Ambil tanggal paling baru dan paling awal yang ada di database
   const timestamps = dates.map(d=>d.getTime());
   const maxDate = new Date(Math.max.apply(null, timestamps));
   const minDate = new Date(Math.min.apply(null, timestamps));
-  
-  // Set default: awal bulan dari data terbaru s/d tanggal terbaru
   const startOfMaxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
   return {from: startOfMaxMonth < minDate ? minDate : startOfMaxMonth, to: endOfDay(maxDate)};
 }
@@ -624,7 +614,7 @@ function periodText(){
 
 function inPeriod(r,cfg){
   const d=parseDateVal(r[cfg.i.date]);
-  if(!d) return true; // Data tanpa tanggal tetap diizinkan tampil
+  if(!d) return true;
   return d >= startOfDay(state.period.from) && d <= endOfDay(state.period.to);
 }
 function filterPeriod(rows,cfg){return (rows||[]).filter(r=>inPeriod(r,cfg));}
@@ -654,7 +644,7 @@ function resetFilter(){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-MODAL & DETAIL
+MODAL & DETAIL POPUP
 ══════════════════════════════════════════════════════════════════ */
 function mkChart(id,cfg){const el=qs(id);if(!el)return null;if(state.charts[id])state.charts[id].destroy();const c=new Chart(el,cfg);state.charts[id]=c;return c;}
 function destroyCharts(){Object.values(state.charts).forEach(c=>{try{c.destroy();}catch(e){}});state.charts={};}
@@ -664,7 +654,7 @@ function closeModal(){qs('modalWrap').classList.add('hidden');document.body.styl
 function listTableHTML(key,rows){
   const cfg=SHEETS[key];const cols=cfg.dataCols;
   if(!rows.length)return emptyHTML('Tidak ada data');
-  return '<table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(cfg.headers[c])+'</th>').join('')+'</tr></thead><tbody>'+
+  return '<table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(cfg.headers[c].toUpperCase())+'</th>').join('')+'</tr></thead><tbody>'+
   rows.map((r,ri2)=>'<tr data-ri="'+ri2+'">'+cols.map(c=>{
     if(c===cfg.i.date)return '<td class="text-blue-600">'+fmtDate(parseDateVal(r[c]))+'</td>';
     const v=r[c];return '<td>'+(v==null||v===''?'<span class="text-slate-300">—</span>':esc(String(v)))+'</td>';
@@ -680,7 +670,7 @@ function openRecordList(title,key,rows,subtitle){
 
 function overviewColsHTML(key){
   const cfg=SHEETS[key];
-  return Array.from({length:7},(_,i)=>i).map(i=>'<th>'+esc(cfg.headers[i]||('Kolom '+(i+1)))+'</th>').join('');
+  return Array.from({length:7},(_,i)=>i).map(i=>'<th>'+esc((cfg.headers[i]||'').toUpperCase())+'</th>').join('');
 }
 function overviewRowHTML(key,r,ri2){
   const cfg=SHEETS[key];
@@ -742,17 +732,17 @@ function openMetricModal(key,metric){
   
   let body='<p class="text-xs text-slate-500 mb-3">'+sub+'</p>';
   if(!list.length) body+=emptyHTML('Tidak ada data pada periode ini');
-  else body+='<div class="overflow-x-auto"><table class="tbl"><thead><tr><th>'+esc(cfg.headers[cfg.i.id])+'</th><th>JOP NAME</th><th>NO JOP</th><th>DATE</th><th>'+valLabel+'</th>'+(causeIdx!=null?'<th>Penyebab</th>':'')+'</tr></thead><tbody>'+
+  else body+='<div class="overflow-x-auto"><table class="tbl"><thead><tr><th>'+esc(cfg.headers[cfg.i.id].toUpperCase())+'</th><th>JOP NAME</th><th>NO JOP</th><th>DATE</th><th>'+valLabel+'</th>'+(causeIdx!=null?'<th>Penyebab</th>':'')+'</tr></thead><tbody>'+
   list.map((r,ri2)=>'<tr data-ri="'+ri2+'"><td class="font-semibold text-slate-700">'+esc(cell(r,cfg.i.id))+'</td><td>'+esc(cell(r,cfg.i.jop))+'</td><td>'+esc(cell(r,cfg.i.nojop))+'</td><td>'+fmtDate(parseDateVal(r[cfg.i.date]))+'</td><td class="font-bold">'+(metric==='pct'?valFn(r).toLocaleString('id-ID',{maximumFractionDigits:1})+'%':valFn(r).toLocaleString('id-ID'))+'</td>'+(causeIdx!=null?'<td>'+(cell(r,causeIdx)?esc(cell(r,causeIdx)):'<span class="text-slate-300">—</span>')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';
   state.modalBack=null;
   openModal(mTitle,body);
 }
 
 /* ══════════════════════════════════════════════════════════════════
-DASHBOARD OVERVIEW & PRODUKSI
+1. DASHBOARD OVERVIEW (SCREEN, FLEXO, ETCHING)
 ══════════════════════════════════════════════════════════════════ */
 function renderOverview(){
-  const t0=startOfDay(new Date());const min=new Date(t0);min.setDate(min.getDate()-7); // Rentang H-7 agar lebih akomodatif
+  const t0=startOfDay(new Date());const min=new Date(t0);min.setDate(min.getDate()-2);
   const sets=OVER_SETS.map(s=>{
     const cfg=SHEETS[s.key];const data=state.data[s.key]||[];
     const unIdx=[],doneIdx=[];
@@ -761,7 +751,7 @@ function renderOverview(){
       if(!isDone(cell(r,cfg.i.status))) unIdx.push(ix);
       else {
         const d=parseDateVal(r[cfg.i.date]);
-        if(!d || (d>=min && d<=endOfDay(t0))) doneIdx.push(ix);
+        if(d && d>=min && d<=endOfDay(t0)) doneIdx.push(ix);
       }
     });
     return Object.assign({},s,{cfg,un:unIdx.map(ix=>({key:s.key,cfg,ix,r:data[ix]})),done:doneIdx.map(ix=>({key:s.key,cfg,ix,r:data[ix]}))});
@@ -779,34 +769,37 @@ function renderOverview(){
   '<span class="w-2.5 h-2.5 rounded-full" style="background:'+s.color+'"></span></button>').join('')+
   '<div class="mt-auto flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100"><span>Total dalam proses</span><span class="font-display font-bold text-slate-800 text-base">'+totalUn+'</span></div></div>';
   html+='<div class="card p-4 lg:col-span-2"><div class="flex items-center justify-between gap-2 flex-wrap"><h3 class="card-title">Pie Chart — Pekerjaan Dalam Proses</h3><span class="text-[11px] text-slate-400">klik segmen untuk detail</span></div><div class="h-72 relative">'+(totalUn?'<canvas id="chOvPie"></canvas>':emptyHTML('Tidak ada pekerjaan dalam proses'))+'</div></div></div>';
-  html+='<div class="card overflow-hidden"><div class="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2"><h3 class="card-title">Pekerjaan Belum Selesai</h3><span class="badge bg-amber-50 text-amber-700">'+totalUn+' baris</span></div><div class="overflow-x-auto overflow-y-auto" style="max-height:420px">'+ovTableHTML(sets.flatMap(s=>s.un))+'</div></div>';
-  html+='<div class="card overflow-hidden"><div class="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2"><h3 class="card-title">Pekerjaan Selesai Terbaru</h3><span class="badge bg-emerald-50 text-emerald-700">'+totalDone+' baris</span></div><div class="overflow-x-auto overflow-y-auto" style="max-height:420px">'+ovTableHTML(sets.flatMap(s=>s.done))+'</div></div>';
+  html+='<div class="card overflow-hidden"><div class="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2"><h3 class="card-title">Pekerjaan Belum Selesai (Kolom 1-7)</h3><span class="badge bg-amber-50 text-amber-700">'+totalUn+' baris</span></div><div class="overflow-x-auto overflow-y-auto" style="max-height:420px">'+ovTableHTML(sets.flatMap(s=>s.un))+'</div></div>';
+  html+='<div class="card overflow-hidden"><div class="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2"><h3 class="card-title">Pekerjaan Selesai (H-2 s/d Hari Ini)</h3><span class="badge bg-emerald-50 text-emerald-700">'+totalDone+' baris · '+fmtDate(min)+' – '+fmtDate(t0)+'</span></div><div class="overflow-x-auto overflow-y-auto" style="max-height:420px">'+ovTableHTML(sets.flatMap(s=>s.done))+'</div></div>';
   html+='</div>';
   qs('mainContent').innerHTML=html;
   
   if(totalUn){
     mkChart('chOvPie',{type:'doughnut',data:{labels:sets.map(s=>s.label),datasets:[{data:sets.map(s=>s.un.length),backgroundColor:sets.map(s=>s.color),borderWidth:3,borderColor:'#fff',hoverOffset:10}]},
     options:{maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',padding:16,font:{family:'Inter'}}},tooltip:tt()},
-    onClick:function(e,els){if(!els.length)return;const s=sets[els[0].index];openOverviewRecordList('Pekerjaan '+s.label+' — Belum Selesai',s.key,s.un.map(x=>x.r),'Status belum SELESAI');}}});
+    onClick:function(e,els){if(!els.length)return;const s=sets[els[0].index];openOverviewRecordList('Pekerjaan '+s.label+' — Belum Selesai',s.key,s.un.map(x=>x.r),'Status belum SELESAI · Kolom 1-7');}}});
   }
 }
 
 function ovTableHTML(items){
   if(!items.length)return emptyHTML('Tidak ada data');
-  const head=['Jenis','ID','JOP Name','No JOP','No Plate/B','Status','Tanggal','Shift','OP'];
+  const head=['Jenis','ID','JOP Name','No JOP','No B/Plate','Tipe/Status','Status/Date','Tanggal/Shift'];
   return '<table class="tbl"><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+items.map(it=>{
     const c=it.cfg,r=it.r,d=parseDateVal(r[c.i.date]);
     return '<tr data-osheet="'+it.key+'" data-oix="'+it.ix+'">'+
     '<td><span class="badge" style="background:'+hexA(SHEETS[it.key].color,.12)+';color:'+SHEETS[it.key].color+'">'+SHEETS[it.key].label+'</span></td>'+
-    '<td class="font-semibold text-slate-700">'+esc(cell(r,c.i.id))+'</td>'+
-    '<td>'+esc(cell(r,c.i.jop))+'</td><td>'+esc(cell(r,c.i.nojop))+'</td>'+
+    '<td class="font-semibold text-slate-700">'+esc(cell(r,0))+'</td>'+
+    '<td>'+esc(cell(r,1))+'</td><td>'+esc(cell(r,2))+'</td>'+
     '<td>'+esc(cell(r,3))+'</td>'+
+    '<td>'+esc(cell(r,4))+'</td>'+
     '<td>'+statusBadge(cell(r,c.i.status))+'</td>'+
-    '<td data-datecell data-key="'+it.key+'" data-ts="'+(d?d.getTime():0)+'" class="!cursor-pointer text-blue-600 underline decoration-dotted underline-offset-2">'+fmtDate(d)+'</td>'+
-    '<td>'+esc(cell(r,c.i.shift))+'</td><td>'+esc(cell(r,c.i.op))+'</td></tr>';
+    '<td data-datecell data-key="'+it.key+'" data-ts="'+(d?d.getTime():0)+'" class="!cursor-pointer text-blue-600 underline decoration-dotted underline-offset-2">'+fmtDate(d)+'</td></tr>';
   }).join('')+'</tbody></table>';
 }
 
+/* ══════════════════════════════════════════════════════════════════
+2. DASHBOARD PRODUKSI (CTCP, CTP, SCREEN, FLEXO, ETCHING)
+══════════════════════════════════════════════════════════════════ */
 function calcMetrics(rows,cfg){
   let baik=0,rusak=0,ganti=0;
   rows.forEach(r=>{baik+=num(r[cfg.i.baik]);rusak+=num(r[cfg.i.rusak]);ganti+=num(r[cfg.i.ganti]);});
@@ -874,8 +867,8 @@ function renderProd(key){
     '<div class="card p-4 xl:col-span-2"><div class="flex justify-between items-center flex-wrap gap-2"><h3 class="card-title">'+cfg.charts.daily+'</h3><span class="text-[11px] text-slate-400">klik batang = detail harian</span></div><div class="h-72"><canvas id="chDaily"></canvas></div></div>'+
     '<div class="card p-4"><div class="flex justify-between items-center flex-wrap gap-2"><h3 class="card-title">Kategori JOP</h3><span class="text-[11px] text-slate-400">huruf pertama No JOP</span></div><div class="h-72"><canvas id="chJop"></canvas></div></div></div>'+
     '<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">'+
-    '<div class="card p-4"><h3 class="card-title">Penyebab '+cfg.unit+' Rusak</h3><div class="h-64"><canvas id="chPR"></canvas></div></div>'+
-    '<div class="card p-4"><h3 class="card-title">Penyebab '+cfg.unit+' Ganti</h3><div class="h-64"><canvas id="chPG"></canvas></div></div>'+
+    '<div class="card p-4"><h3 class="card-title">Sebab '+cfg.unit+' Rusak</h3><div class="h-64"><canvas id="chPR"></canvas></div></div>'+
+    '<div class="card p-4"><h3 class="card-title">Sebab '+cfg.unit+' Ganti</h3><div class="h-64"><canvas id="chPG"></canvas></div></div>'+
     (cfg.charts.extra?'<div class="card p-4 md:col-span-2 xl:col-span-1"><h3 class="card-title">'+cfg.charts.extra.title+'</h3><div class="h-64"><canvas id="chEx"></canvas></div></div>':'')+
     '</div>';
   } else {
@@ -905,12 +898,12 @@ function buildProdCharts(key,rows){
   const pr=causeData(rows,cfg.i.penyRusak);
   mkChart('chPR',{type:'bar',data:{labels:pr.labels,datasets:[{data:pr.counts,backgroundColor:'#f43f5e',borderRadius:5}]},
   options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tt()},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}},
-  onClick:function(e,els){if(!els.length)return;const c=pr.labels[els[0].index];openRecordList('Penyebab Rusak: '+c,key,rows.filter(r=>cell(r,cfg.i.penyRusak)===c));}}});
+  onClick:function(e,els){if(!els.length)return;const c=pr.labels[els[0].index];openRecordList('Sebab Rusak: '+c,key,rows.filter(r=>cell(r,cfg.i.penyRusak)===c));}}});
 
   const pg=causeData(rows,cfg.i.penyGanti);
   mkChart('chPG',{type:'bar',data:{labels:pg.labels,datasets:[{data:pg.counts,backgroundColor:'#f59e0b',borderRadius:5}]},
   options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tt()},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}},
-  onClick:function(e,els){if(!els.length)return;const c=pg.labels[els[0].index];openRecordList('Penyebab Ganti: '+c,key,rows.filter(r=>cell(r,cfg.i.penyGanti)===c));}}});
+  onClick:function(e,els){if(!els.length)return;const c=pg.labels[els[0].index];openRecordList('Sebab Ganti: '+c,key,rows.filter(r=>cell(r,cfg.i.penyGanti)===c));}}});
 
   const ex=cfg.charts.extra;
   if(ex && ex.col !== undefined){
@@ -928,7 +921,7 @@ function buildProdCharts(key,rows){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-KOMPARASI, DATA PRODUKSI & FORMS
+3. DASHBOARD KOMPARASI
 ══════════════════════════════════════════════════════════════════ */
 function defaultComparePeriods(){
   const today=new Date();
@@ -1046,7 +1039,7 @@ function cmpTableHTML(key,rows){
   const cfg=SHEETS[key];
   if(!rows.length)return emptyHTML('Tidak ada data pada periode ini');
   const cols=[cfg.i.id,cfg.i.jop,cfg.i.nojop,cfg.i.date,cfg.i.baik,cfg.i.rusak,cfg.i.ganti];
-  return '<table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(cfg.headers[c])+'</th>').join('')+'</tr></thead><tbody>'+
+  return '<table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(cfg.headers[c].toUpperCase())+'</th>').join('')+'</tr></thead><tbody>'+
   rows.map((r,ri2)=>'<tr data-ri="'+ri2+'">'+cols.map(c=>{
     if(c===cfg.i.date)return '<td class="text-blue-600">'+fmtDate(parseDateVal(r[c]))+'</td>';
     const v=r[c];return '<td>'+(v==null||v===''?'<span class="text-slate-300">—</span>':esc(String(v)))+'</td>';
@@ -1078,6 +1071,9 @@ function lastMonthCompare(){
   toast('Reset ke: Bulan Lalu vs Bulan Ini','info');
 }
 
+/* ══════════════════════════════════════════════════════════════════
+4. DATA PRODUKSI (TABEL SESUAI KOLOM SPESIFIKASI)
+══════════════════════════════════════════════════════════════════ */
 function cmpCell(a,b,isDate){
   if(isDate){const da=parseDateVal(a),db=parseDateVal(b);return (da?da.getTime():0)-(db?db.getTime():0);}
   const na=typeof a==='number'?a:parseFloat(String(a??'').replace(',','.'));
@@ -1092,7 +1088,7 @@ function renderDataView(key){
   if(!state.sortMap[key])state.sortMap[key]={c:cfg.i.date,d:-1};
   qs('mainContent').innerHTML='<div class="space-y-4 anim-in">'+
   '<div class="card p-4 flex flex-wrap items-center gap-3"><div><h3 class="card-title">Data Produksi '+cfg.label+'</h3>'+
-  '<p class="text-xs text-slate-500">Periode '+periodText()+' · klik baris = detail · klik judul kolom = urutkan</p></div>'+
+  '<p class="text-xs text-slate-500">Periode '+periodText()+' · klik baris = detail semua kolom · klik judul kolom = urutkan</p></div>'+
   '<div class="ml-auto flex items-center gap-2"><div class="relative"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">'+I.search+'</span>'+
   '<input id="dataSearch" class="inp !w-48 sm:!w-56 !pl-8 !py-2 text-sm" placeholder="Cari ID / JOP / No…"></div>'+
   '<span id="dataCount" class="badge bg-slate-100 text-slate-600"></span></div></div>'+
@@ -1110,13 +1106,16 @@ function updateDataTable(key){
   qs('dataCount').textContent=rows.length+' baris';
   const cols=cfg.dataCols;
   if(!rows.length){qs('dataTableWrap').innerHTML=emptyHTML('Tidak ada data pada periode ini — sesuaikan filter tanggal.');return;}
-  qs('dataTableWrap').innerHTML='<table class="tbl"><thead><tr>'+cols.map(c=>'<th data-sortcol="'+c+'" data-key="'+key+'" class="!cursor-pointer select-none hover:!text-blue-600">'+esc(cfg.headers[c])+' <span class="text-blue-600">'+(s.c===c?(s.d===1?'▲':'▼'):'')+'</span></th>').join('')+'</tr></thead><tbody>'+
+  qs('dataTableWrap').innerHTML='<table class="tbl"><thead><tr>'+cols.map(c=>'<th data-sortcol="'+c+'" data-key="'+key+'" class="!cursor-pointer select-none hover:!text-blue-600">'+esc(cfg.headers[c].toUpperCase())+' <span class="text-blue-600">'+(s.c===c?(s.d===1?'▲':'▼'):'')+'</span></th>').join('')+'</tr></thead><tbody>'+
   rows.map(o=>'<tr data-drow data-key="'+key+'" data-ri="'+o.ix+'">'+cols.map(c=>{
     if(c===cfg.i.date){const d=parseDateVal(o.r[c]);return '<td data-datecell data-key="'+key+'" data-ts="'+(d?d.getTime():0)+'" class="!cursor-pointer text-blue-600 underline decoration-dotted underline-offset-2">'+fmtDate(d)+'</td>';}
     const v=o.r[c];return '<td>'+(v==null||v===''?'<span class="text-slate-300">—</span>':esc(String(v)))+'</td>';
   }).join('')+'</tr>').join('')+'</tbody></table>';
 }
 
+/* ══════════════════════════════════════════════════════════════════
+5. FORM PERMINTAAN
+══════════════════════════════════════════════════════════════════ */
 function renderForms(){
   let html='<div class="space-y-4 anim-in">';
   html+='<div class="card p-4 flex items-center gap-3"><span class="w-11 h-11 rounded-xl grid place-items-center bg-[#0c1424] text-white">'+I.doc+'</span><div><h3 class="card-title">Form Permintaan Pekerjaan</h3><p class="text-xs text-slate-500">Setiap form terhubung langsung ke Google Form resmi.</p></div></div>';
@@ -1134,7 +1133,7 @@ function renderForms(){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-NAVIGASI & ROUTER
+NAVIGASI, SIDEBAR & ROUTER
 ══════════════════════════════════════════════════════════════════ */
 function splitView(v){const i=v.indexOf(':');return i<0?[v,null]:[v.slice(0,i),v.slice(i+1)];}
 function navItem(id,label,icon,color){return '<button data-nav="'+id+'" class="nav-item">'+(color?'<span class="w-2 h-2 rounded-full" style="background:'+color+'"></span>':'<span class="text-slate-500">'+icon+'</span>')+'<span class="truncate">'+label+'</span></button>';}
@@ -1186,7 +1185,7 @@ function closeDrawer(){document.body.classList.remove('sb-open');}
 
 function openPrintPreview(){
   const [t]=splitView(state.view);
-  const per=t==='overview'?'proses berjalan & selesai H-7 s/d hari ini':(t==='forms'?'—':(t==='compare'?'Periode 1: '+fmtPeriodRange(state.compare.p1.from,state.compare.p1.to)+' · Periode 2: '+fmtPeriodRange(state.compare.p2.from,state.compare.p2.to):periodText()));
+  const per=t==='overview'?'proses berjalan & selesai H-2 s/d hari ini':(t==='forms'?'—':(t==='compare'?'Periode 1: '+fmtPeriodRange(state.compare.p1.from,state.compare.p1.to)+' · Periode 2: '+fmtPeriodRange(state.compare.p2.from,state.compare.p2.to):periodText()));
   openModal('Preview Print','<div class="space-y-4">'+
   '<p class="text-sm text-slate-600">Dokumen siap dicetak. Pada dialog cetak browser Anda dapat memilih <b>printer</b> atau <b>Save as PDF</b>.</p>'+
   '<div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm space-y-1">'+
@@ -1271,7 +1270,7 @@ function init(){
   state.bootPromise=loadAllData();
   state.bootPromise.then(()=>{
     let saved=null;
-    try{saved=JSON.parse(localStorage.getItem('pf_session'));}catch(e){}
+    try{saved=JSON.parse(sessionStorage.getItem('pf_session'));}catch(e){}
     if(saved&&saved.USER){
       state.user=saved;
       enterApp();
