@@ -433,7 +433,7 @@ function mapRowToMatrix(row, key) {
   const clean = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   Object.entries(row).forEach(([colName, val]) => {
-    if (colName === 'Sync_Status' || colName === 'created_at') return;
+    if (colName === 'Sync_Status' || colName === 'created_at' || colName === 'row_hash') return;
     const colClean = clean(colName);
     let idx = cfg.headers.findIndex(h => clean(h) === colClean);
 
@@ -465,6 +465,9 @@ function mapRowToMatrix(row, key) {
   return arr;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+PEMBACAAN DATA DARI SUPABASE (TERMASUK DB_USER)
+══════════════════════════════════════════════════════════════════ */
 async function loadAllData(){
   try {
     setLoginStatus('Menghubungkan ke Supabase...');
@@ -474,11 +477,12 @@ async function loadAllData(){
         const data = await fetchAllRows(k);
 
         if (k === 'db_user') {
+          // Format matrix kolom db_user: [username, role, password, id_user]
           state.data[k] = (data || []).map(r => [
-            r.user || r.username || '',
-            r.role || 'USER',
-            r.password || '',
-            r.id || ''
+            String(r.username || r.user || '').trim(),
+            String(r.role || 'USER').trim(),
+            String(r.password || '').trim(),
+            String(r.id_user || r.id || '').trim()
           ]);
         } else {
           state.data[k] = (data || []).map(row => mapRowToMatrix(row, k));
@@ -569,27 +573,58 @@ async function doLogin(e){
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+HANDLER SIGN UP BARU KE SUPABASE
+══════════════════════════════════════════════════════════════════ */
 async function doSignup(e){
   e.preventDefault();
   const u=qs('ls_user').value.trim(),role=qs('ls_role').value,p=qs('ls_pass').value,p2=qs('ls_pass2').value;
+  const btn=qs('btnSignup');
+
   if(u.length<3) return toast('Username minimal 3 karakter','warn');
   if(p.length<3) return toast('Password minimal 3 karakter','warn');
   if(p!==p2) return toast('Konfirmasi password tidak sama','err');
 
+  btn.disabled=true;
+  btn.innerHTML='<span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full" style="animation:spinSlow 1s linear infinite"></span> Mendaftarkan…';
+
   try {
+    // 1. Verifikasi duplikasi username
+    const existingUsers = getAllUsers();
+    if (existingUsers.some(x => x.USER.toLowerCase() === u.toLowerCase())) {
+      throw new Error('Username "' + u + '" sudah terdaftar.');
+    }
+
+    // 2. Generate Format ID USER: USER00008, dst.
+    const userCount = state.data.db_user ? state.data.db_user.length : 0;
+    const nextId = 'USER' + String(userCount + 1).padStart(5, '0');
+
+    // 3. Simpan langsung ke Supabase
     const { error } = await sbClient.from('db_user').insert([{
-      id: 'USER' + Date.now().toString().slice(-6),
-      user: u,
+      id_user: nextId,
+      username: u,
       role: role,
-      password: p
+      password: String(p)
     }]);
+
     if(error) throw error;
+
     toast('Akun "' + esc(u) + '" berhasil didaftarkan ke db_user — silakan masuk', 'ok');
+    
+    // Muat ulang cache akun
     await loadAllData();
+
     qs('ls_user').value='';qs('ls_pass').value='';qs('ls_pass2').value='';
-    qs('tabLogin').click();qs('lu_user').value=u;qs('lu_pass').focus();
+    qs('tabLogin').click();
+    qs('lu_user').value=u;
+    qs('lu_pass').focus();
+
   } catch(err) {
-    toast('Gagal mendaftar: ' + err.message, 'err');
+    console.error('Signup error:', err);
+    toast('Gagal mendaftar: ' + (err.message || err.toString()), 'err');
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='Daftar Akun';
   }
 }
 
