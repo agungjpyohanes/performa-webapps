@@ -71,7 +71,7 @@ export default function AuthView({ usersData = [], onLoginSuccess, onToast, serv
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.15fr_1fr] bg-[#f2f5fb]">
+    <div id="loginView" className="min-h-screen grid lg:grid-cols-[1.15fr_1fr] bg-[#f2f5fb]">
       {/* Kolom Kiri Info */}
       <div className="relative hidden lg:flex flex-col justify-between bg-[#0c1424] text-white p-10 overflow-hidden">
         <div className="absolute inset-0 halftone opacity-70"></div>
@@ -142,7 +142,6 @@ export default function AuthView({ usersData = [], onLoginSuccess, onToast, serv
       {/* Kolom Kanan Form Card */}
       <div className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
-          {/* Mobile Header Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-5">
             <img
               className="w-12 h-12 rounded-xl bg-white p-1 border border-slate-200"
@@ -155,7 +154,7 @@ export default function AuthView({ usersData = [], onLoginSuccess, onToast, serv
             </div>
           </div>
 
-          <div className={`card p-7 sm:p-8 shadow-xl ${isShaking ? 'shake' : ''}`}>
+          <div id="loginCard" className={`card p-7 sm:p-8 shadow-xl ${isShaking ? 'shake' : ''}`}>
             <div className="flex rounded-xl bg-slate-100 p-1 mb-6">
               <button
                 type="button"
