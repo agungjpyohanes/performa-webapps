@@ -589,17 +589,14 @@ async function doSignup(e){
   btn.innerHTML='<span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full" style="animation:spinSlow 1s linear infinite"></span> Mendaftarkan…';
 
   try {
-    // 1. Verifikasi duplikasi username
     const existingUsers = getAllUsers();
     if (existingUsers.some(x => x.USER.toLowerCase() === u.toLowerCase())) {
       throw new Error('Username "' + u + '" sudah terdaftar.');
     }
 
-    // 2. Generate Format ID USER: USER00008, dst.
     const userCount = state.data.db_user ? state.data.db_user.length : 0;
     const nextId = 'USER' + String(userCount + 1).padStart(5, '0');
 
-    // 3. Simpan langsung ke Supabase
     const { error } = await sbClient.from('db_user').insert([{
       id_user: nextId,
       username: u,
@@ -611,7 +608,6 @@ async function doSignup(e){
 
     toast('Akun "' + esc(u) + '" berhasil didaftarkan ke db_user — silakan masuk', 'ok');
     
-    // Muat ulang cache akun
     await loadAllData();
 
     qs('ls_user').value='';qs('ls_pass').value='';qs('ls_pass2').value='';
@@ -775,12 +771,16 @@ function openDetail(key,row,withBack){
 function openDayModal(key,ts){
   if(!ts){toast('Tanggal tidak valid','warn');return;}
   const cfg=SHEETS[key];const day=new Date(ts);
-  const rows=(state.data[key]||[]).filter(r=>{const d=parseDateVal(r[cfg.i.date]);return d&&startOfDay(d).getTime()===ts;});
+  const rows=(state.data[key]||[]).filter(r=>{
+    if(!cell(r,cfg.i.id).trim() || (!cell(r,cfg.i.jop).trim() && !cell(r,cfg.i.nojop).trim())) return false;
+    const d=parseDateVal(r[cfg.i.date]);
+    return d&&startOfDay(d).getTime()===ts;
+  });
   openOverviewRecordList('Rekap '+cfg.label+' — '+fmtDate(day),key,rows,'Semua data pada tanggal '+fmtDate(day));
 }
 
 function openMetricModal(key,metric){
-  const cfg=SHEETS[key];const rows=filterPeriod(state.data[key]||[],cfg);
+  const cfg=SHEETS[key];const rows=filterPeriod(state.data[key]||[],cfg).filter(r=>cell(r,cfg.i.id).trim() && (cell(r,cfg.i.jop).trim() || cell(r,cfg.i.nojop).trim()));
   let list=[],valFn=null,causeIdx=null,valLabel='';
   if(metric==='baik'){list=rows.filter(r=>num(r[cfg.i.baik])>0);valFn=r=>num(r[cfg.i.baik]);valLabel=cfg.unit+' Baik';}
   else if(metric==='rusak'){list=rows.filter(r=>num(r[cfg.i.rusak])>0);valFn=r=>num(r[cfg.i.rusak]);valLabel=cfg.unit+' Rusak';causeIdx=cfg.i.penyRusak;}
@@ -813,7 +813,13 @@ function renderOverview(){
     const cfg=SHEETS[s.key];const data=state.data[s.key]||[];
     const unIdx=[],doneIdx=[];
     data.forEach((r,ix)=>{
-      if(!cell(r,cfg.i.id).trim()) return;
+      const idVal = cell(r, cfg.i.id).trim();
+      const jopVal = cell(r, cfg.i.jop).trim();
+      const noJopVal = cell(r, cfg.i.nojop).trim();
+
+      // Filter ketat: Abaikan jika ID kosong atau jika jop_name & no_jop keduanya kosong
+      if (!idVal || (!jopVal && !noJopVal)) return;
+
       if(!isDone(cell(r,cfg.i.status))) unIdx.push(ix);
       else {
         const d=parseDateVal(r[cfg.i.date]);
@@ -907,7 +913,7 @@ function causeData(rows,col){
 
 function renderProd(key){
   const cfg=SHEETS[key];
-  const rows=filterPeriod(state.data[key]||[],cfg);
+  const rows=filterPeriod(state.data[key]||[],cfg).filter(r=>cell(r,cfg.i.id).trim() && (cell(r,cfg.i.jop).trim() || cell(r,cfg.i.nojop).trim()));
   const m=calcMetrics(rows,cfg);
   const cards=[
   {metric:'baik',label:cfg.cards.baik,val:m.baik,icon:'check',cls:'text-emerald-600 bg-emerald-50'},
@@ -1020,8 +1026,8 @@ function renderCompare(){
     const def=defaultComparePeriods();
     state.compare.p1=def.p1;state.compare.p2=def.p2;
   }
-  const rows1=filterByRange(state.data[state.compare.key]||[],cfg,state.compare.p1.from,state.compare.p1.to);
-  const rows2=filterByRange(state.data[state.compare.key]||[],cfg,state.compare.p2.from,state.compare.p2.to);
+  const rows1=filterByRange(state.data[state.compare.key]||[],cfg,state.compare.p1.from,state.compare.p1.to).filter(r=>cell(r,cfg.i.id).trim() && (cell(r,cfg.i.jop).trim() || cell(r,cfg.i.nojop).trim()));
+  const rows2=filterByRange(state.data[state.compare.key]||[],cfg,state.compare.p2.from,state.compare.p2.to).filter(r=>cell(r,cfg.i.id).trim() && (cell(r,cfg.i.jop).trim() || cell(r,cfg.i.nojop).trim()));
   const m1=calcMetrics(rows1,cfg);
   const m2=calcMetrics(rows2,cfg);
 
@@ -1165,7 +1171,10 @@ function renderDataView(key){
 
 function updateDataTable(key){
   const cfg=SHEETS[key];
-  let rows=(state.data[key]||[]).map((r,ix)=>({r,ix})).filter(o=>inPeriod(o.r,cfg));
+  let rows=(state.data[key]||[])
+    .map((r,ix)=>({r,ix}))
+    .filter(o=>inPeriod(o.r,cfg) && cell(o.r,cfg.i.id).trim() && (cell(o.r,cfg.i.jop).trim() || cell(o.r,cfg.i.nojop).trim()));
+
   if(state.dataQuery){rows=rows.filter(o=>cfg.dataCols.some(ci=>String(o.r[ci]??'').toLowerCase().includes(state.dataQuery)));}
   const s=state.sortMap[key];
   rows.sort((a,b)=>cmpCell(a.r[s.c],b.r[s.c],s.c===cfg.i.date)*s.d);
