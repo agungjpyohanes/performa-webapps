@@ -1,0 +1,31 @@
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/sora@latest/latin-600-normal.css');
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/sora@latest/latin-700-normal.css');
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/sora@latest/latin-800-normal.css');
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.css');
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-500-normal.css');
+@import url('https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-600-normal.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card {
+    @apply bg-white border border-[#e5e9f2] rounded-2xl shadow-sm;
+  }
+  .card-h {
+    @apply transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-slate-300;
+  }
+  .tbl {
+    @apply w-full text-[0.82rem] border-collapse;
+  }
+  .tbl thead th {
+    @apply sticky top-0 bg-slate-50 text-slate-600 font-semibold uppercase text-[0.66rem] tracking-wider px-3 py-2.5 border-b border-slate-200 text-left whitespace-nowrap z-10;
+  }
+  .tbl tbody td {
+    @apply px-3 py-2 border-b border-slate-100 whitespace-nowrap text-slate-700;
+  }
+  .tbl tbody tr {
+    @apply transition-colors hover:bg-blue-50/50 cursor-pointer;
+  }
+}
