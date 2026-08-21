@@ -29,6 +29,12 @@ export function num(v) {
   return 0;
 }
 
+export function cell(r, i) {
+  if (!r) return '';
+  const v = r[i];
+  return v == null ? '' : String(v);
+}
+
 export function isDone(st) {
   const s = String(st || '').toUpperCase();
   return s.includes('SELESAI') || s.includes('DONE') || s.includes('FINISH') || s.includes('COMPLETE');
@@ -44,4 +50,37 @@ export function hexA(hex, a) {
   const h = hex.replace('#', '');
   const n = parseInt(h, 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+export function countBy(rows, fn) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = (fn(r) || '').trim() || '(kosong)';
+    m.set(k, (m.get(k) || 0) + 1);
+  });
+  return m;
+}
+
+export function iso(d) {
+  if (!d) return '';
+  const x = d instanceof Date ? d : new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+
+export function fmtPeriodRange(from, to) {
+  if (!from || !to) return '—';
+  const same = iso(from) === iso(to);
+  return same ? fmtDate(from) : `${fmtDate(from)} – ${fmtDate(to)}`;
+}
+
+export function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+export function endOfDay(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
 }
