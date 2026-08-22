@@ -166,14 +166,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
     };
   }, [rows, cfg]);
 
-  // Toleransi Max 1.0%
-  const calculateGrade = (lossRate) => {
-    if (lossRate <= 1.0) return 'A';
-    if (lossRate <= 2.0) return 'B';
-    if (lossRate <= 3.0) return 'C';
-    return 'D';
-  };
-
   const opRanking = useMemo(() => {
     const map = new Map();
     rows.forEach(r => {
@@ -190,7 +182,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
       .map(o => {
         const output = o.good + o.reject;
         const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
-        return { ...o, output, lossRate, grade: calculateGrade(lossRate) };
+        return { ...o, output, lossRate };
       })
       .sort((a, b) => b.output - a.output);
   }, [rows, cfg]);
@@ -211,7 +203,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
       .map(o => {
         const output = o.good + o.reject;
         const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
-        return { ...o, output, lossRate, grade: calculateGrade(lossRate) };
+        return { ...o, output, lossRate };
       })
       .sort((a, b) => b.output - a.output);
   }, [rows, cfg]);
@@ -223,13 +215,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
     const q = searchQuery.toLowerCase();
     return activeLeaderboardData.filter(o => o.name.toLowerCase().includes(q));
   }, [activeLeaderboardData, searchQuery]);
-
-  const getGradeBadgeClass = (grade) => {
-    if (grade === 'A') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    if (grade === 'B') return 'bg-blue-50 text-blue-700 border-blue-200';
-    if (grade === 'C') return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-rose-50 text-rose-700 border-rose-200';
-  };
 
   return (
     <div className="space-y-4 anim-in">
@@ -513,7 +498,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
                 <th className="py-2.5 px-3">Reject</th>
                 <th className="py-2.5 px-3">Replace</th>
                 <th className="py-2.5 px-3">Loss Rate</th>
-                <th className="py-2.5 px-3">Grade</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -533,11 +517,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
                   <td className="py-2 px-3 text-rose-600 font-semibold">{o.reject.toLocaleString('id-ID')}</td>
                   <td className="py-2 px-3 text-amber-600">{o.replace.toLocaleString('id-ID')}</td>
                   <td className="py-2 px-3 font-bold">{o.lossRate.toFixed(1)}%</td>
-                  <td className="py-2 px-3">
-                    <span className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-extrabold border ${getGradeBadgeClass(o.grade)}`}>
-                      {o.grade}
-                    </span>
-                  </td>
                 </tr>
               ))}
             </tbody>
