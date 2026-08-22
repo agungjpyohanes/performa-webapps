@@ -59,16 +59,16 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
     let label = 'Parameter Mesin';
 
     if (activeKey === 'db_ctcp' || activeKey === 'db_ctp') {
-      colIdx = 5;
+      colIdx = cfg.i.mesin_expose ?? 5;
       label = 'Mesin Expose';
     } else if (activeKey === 'db_screen') {
-      colIdx = cfg?.i?.tipe ?? -1;
+      colIdx = cfg.i.tipe ?? 4;
       label = 'Tipe Screen';
     } else if (activeKey === 'db_flexo') {
-      colIdx = cfg?.i?.tebal ?? -1;
+      colIdx = cfg.i.tebal ?? 7;
       label = 'Tebal Flexo';
     } else if (activeKey === 'db_etching') {
-      colIdx = cfg?.i?.tipe ?? -1;
+      colIdx = cfg.i.tipe ?? 4;
       label = 'Tipe Plate';
     }
 
@@ -95,29 +95,30 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
 
   const secondaryParamData = useMemo(() => {
     if (activeKey === 'db_ctcp' || activeKey === 'db_ctp') {
+      const colIdx = cfg.i.mesin_cetak ?? 6;
       const map = new Map();
       rows.forEach(r => {
-        const printMachine = cell(r, 6).trim() || 'Mesin Cetak Standar';
+        const printMachine = cell(r, colIdx).trim() || 'Mesin Cetak Standar';
         const e = map.get(printMachine) || { good: 0, reject: 0 };
         e.good += num(r[cfg.i.baik]);
         e.reject += num(r[cfg.i.rusak]);
         map.set(printMachine, e);
       });
       const labels = [...map.keys()].slice(0, 8);
-      return { colIdx: 6, title: 'Breakdown Mesin Cetak', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
+      return { colIdx, title: 'Breakdown Mesin Cetak', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
     }
     if (activeKey === 'db_etching') {
+      const colIdx = cfg.i.tebal ?? 7;
       const map = new Map();
-      const tebalCol = cfg?.i?.tebal ?? 6;
       rows.forEach(r => {
-        const tebal = cell(r, tebalCol).trim() || 'Standard';
+        const tebal = cell(r, colIdx).trim() || 'Standard';
         const e = map.get(tebal) || { good: 0, reject: 0 };
         e.good += num(r[cfg.i.baik]);
         e.reject += num(r[cfg.i.rusak]);
         map.set(tebal, e);
       });
       const labels = [...map.keys()];
-      return { colIdx: tebalCol, title: 'Breakdown Tebal Plate', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
+      return { colIdx, title: 'Breakdown Tebal Plate', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
     }
     return null;
   }, [rows, activeKey, cfg]);
@@ -166,6 +167,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
     };
   }, [rows, cfg]);
 
+  // Ranking Operator
   const opRanking = useMemo(() => {
     const map = new Map();
     rows.forEach(r => {
@@ -187,10 +189,13 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
       .sort((a, b) => b.output - a.output);
   }, [rows, cfg]);
 
+  // Ranking PO
   const poRanking = useMemo(() => {
     const map = new Map();
+    const poCol = cfg.i.po ?? -1;
+
     rows.forEach(r => {
-      const po = cell(r, 17).trim() || 'Tanpa PO';
+      const po = (poCol !== -1 && cell(r, poCol).trim()) || 'Tanpa PO';
       const e = map.get(po) || { name: po, good: 0, reject: 0, replace: 0, rowList: [] };
       e.good += num(r[cfg.i.baik]);
       e.reject += num(r[cfg.i.rusak]);
@@ -237,7 +242,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
         </div>
       </div>
 
-      {/* 6 KPI Scorecards (Semua Dapat Di-klik) */}
+      {/* 6 KPI Scorecards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 stagger">
         <button
           onClick={() => onOpenList?.(`Total Output ${cfg.label}`, activeKey, rows)}
@@ -316,7 +321,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
 
       {/* Grid Analisis Parameter Spesifik & Jenis JOP */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Parameter Mesin Utama */}
         <div className="card p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -347,7 +351,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
           </div>
         </div>
 
-        {/* Breakdown Jenis JOP */}
         <div className="card p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -377,7 +380,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
           </div>
         </div>
 
-        {/* Parameter Sekunder: Mesin Cetak atau Tebal Plate */}
         {secondaryParamData && (
           <div className="card p-5">
             <h3 className="card-title mb-1">{secondaryParamData.title}</h3>
@@ -405,7 +407,6 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
           </div>
         )}
 
-        {/* Breakdown Shift */}
         <div className={`card p-5 ${secondaryParamData ? '' : 'md:col-span-2'}`}>
           <h3 className="card-title mb-1">Performa Shift</h3>
           <p className="text-xs text-slate-500 mb-3">Klik segmen donat untuk melihat detail transaksi per shift</p>
@@ -437,7 +438,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period, onOpenList 
         </div>
       </div>
 
-      {/* Leaderboard Terpisah OP vs PO (Dapat Di-klik Per Baris) */}
+      {/* Leaderboard Terpisah OP vs PO */}
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>

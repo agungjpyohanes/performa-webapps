@@ -23,12 +23,13 @@ export default function OperatorShiftView({ data, period }) {
 
   const targetKeys = selectedProcess === 'ALL' ? PROD_KEYS : [selectedProcess];
 
-  // Ekstraksi seluruh baris sesuai filter lini dan tanggal
+  // Ekstraksi seluruh baris dengan indeks kolom dinamis
   const allRows = useMemo(() => {
     const res = [];
     targetKeys.forEach(key => {
       const cfg = SHEETS[key];
       const raw = data[key] || [];
+      const poCol = cfg?.i?.po ?? -1;
 
       raw.forEach(r => {
         const idVal = cell(r, cfg.i.id).trim();
@@ -52,14 +53,14 @@ export default function OperatorShiftView({ data, period }) {
           replace: num(r[cfg.i.ganti]),
           operator: cell(r, cfg.i.op).trim() || 'Unassigned',
           shift: cell(r, cfg.i.shift).toUpperCase().trim() || 'NON-SHIFT',
-          po: cell(r, 17).trim() || 'Tanpa PO'
+          po: (poCol !== -1 && cell(r, poCol).trim()) || 'Tanpa PO'
         });
       });
     });
     return res;
   }, [data, targetKeys, period]);
 
-  // Agregasi Terpisah: Khusus Operator
+  // Agregasi Terpisah: Operator
   const operatorStats = useMemo(() => {
     const map = new Map();
     allRows.forEach(r => {
@@ -79,7 +80,7 @@ export default function OperatorShiftView({ data, period }) {
       .sort((a, b) => b.output - a.output);
   }, [allRows]);
 
-  // Agregasi Terpisah: Khusus PO (Customer)
+  // Agregasi Terpisah: PO (Customer)
   const poStats = useMemo(() => {
     const map = new Map();
     allRows.forEach(r => {
@@ -99,7 +100,6 @@ export default function OperatorShiftView({ data, period }) {
       .sort((a, b) => b.output - a.output);
   }, [allRows]);
 
-  // Data aktif berdasarkan tab yang dipilih
   const activeData = activeLeaderboardTab === 'OP' ? operatorStats : poStats;
 
   const filteredData = useMemo(() => {
@@ -216,7 +216,6 @@ export default function OperatorShiftView({ data, period }) {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Toggle Tab Operator vs PO */}
             <div className="flex bg-slate-100 p-1 rounded-lg">
               <button
                 onClick={() => { setActiveLeaderboardTab('OP'); setSearchQuery(''); }}
@@ -236,7 +235,6 @@ export default function OperatorShiftView({ data, period }) {
               </button>
             </div>
 
-            {/* Input Pencarian */}
             <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400" />
               <input
