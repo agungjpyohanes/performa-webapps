@@ -9,13 +9,17 @@ export function useProductionData() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState({ from: null, to: null });
 
-  // Mapping eksplisit per kolom Supabase ke indeks array
   const mapSupabaseRowToMatrix = (row, key) => {
     if (Array.isArray(row)) return row;
 
-    const find = (...keys) => {
-      for (const k of keys) {
-        if (row[k] !== undefined && row[k] !== null) return row[k];
+    const find = (...patterns) => {
+      const keys = Object.keys(row);
+      for (const p of patterns) {
+        const cleanP = p.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const matchedKey = keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanP);
+        if (matchedKey && row[matchedKey] !== undefined && row[matchedKey] !== null) {
+          return row[matchedKey];
+        }
       }
       return '';
     };
@@ -62,7 +66,7 @@ export function useProductionData() {
         find('sebab_rusak', 'penyebab_rusak'),
         find('shift'),
         find('nama_op', 'op', 'operator'),
-        ''
+        find('nama_po', 'po')
       ];
     }
 
@@ -155,7 +159,6 @@ export function useProductionData() {
             }
             newStatus[k] = newData[k].length ? 'live' : 'empty';
           } catch (e) {
-            console.error(`Error loading table ${k}:`, e);
             newData[k] = [];
             newStatus[k] = 'fail';
           }
@@ -165,7 +168,7 @@ export function useProductionData() {
       setData(newData);
       setStatus(newStatus);
 
-      // Hitung rentang tanggal minimum & maksimum aktual dari database
+      // Sinkronisasi rentang tanggal awal
       const allTimestamps = [];
       PROD_KEYS.forEach((k) => {
         const cfg = SHEETS[k];
