@@ -74,11 +74,7 @@ export default function OperatorShiftView({ data, period }) {
       .map(o => {
         const output = o.good + o.reject;
         const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
-        let grade = 'A';
-        if (lossRate > 6) grade = 'D';
-        else if (lossRate > 4) grade = 'C';
-        else if (lossRate > 2) grade = 'B';
-        return { ...o, output, lossRate, grade };
+        return { ...o, output, lossRate };
       })
       .sort((a, b) => b.output - a.output);
   }, [allRows]);
@@ -108,13 +104,6 @@ export default function OperatorShiftView({ data, period }) {
     };
   }, [allRows]);
 
-  const getGradeBadgeClass = (grade) => {
-    if (grade === 'A') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    if (grade === 'B') return 'bg-blue-50 text-blue-700 border-blue-200';
-    if (grade === 'C') return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-rose-50 text-rose-700 border-rose-200';
-  };
-
   return (
     <div className="space-y-4 anim-in">
       {/* Header & Filter Lini */}
@@ -126,7 +115,7 @@ export default function OperatorShiftView({ data, period }) {
             </span>
             <div>
               <h2 className="font-display font-extrabold text-xl text-slate-800">Evaluasi Performa Operator, PO & Shift</h2>
-              <p className="text-xs text-slate-500">Analisis produktivitas tim, rasio afval/reject, dan grading efisiensi</p>
+              <p className="text-xs text-slate-500">Analisis produktivitas tim, rasio afval/reject, dan efisiensi lini</p>
             </div>
           </div>
         </div>
@@ -218,7 +207,6 @@ export default function OperatorShiftView({ data, period }) {
                 <th className="py-2.5 px-3">Reject</th>
                 <th className="py-2.5 px-3">Replace</th>
                 <th className="py-2.5 px-3">Loss Rate</th>
-                <th className="py-2.5 px-3">Grade</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -232,11 +220,6 @@ export default function OperatorShiftView({ data, period }) {
                   <td className="py-2 px-3 text-rose-600 font-semibold">{o.reject.toLocaleString('id-ID')}</td>
                   <td className="py-2 px-3 text-amber-600">{o.replace.toLocaleString('id-ID')}</td>
                   <td className="py-2 px-3 font-bold">{o.lossRate.toFixed(1)}%</td>
-                  <td className="py-2 px-3">
-                    <span className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-extrabold border ${getGradeBadgeClass(o.grade)}`}>
-                      {o.grade}
-                    </span>
-                  </td>
                 </tr>
               ))}
             </tbody>
