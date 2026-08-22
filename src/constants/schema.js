@@ -117,6 +117,35 @@ export const SHEETS = {
   }
 };
 
+// Konfigurasi Link/Form Input Entry Data
+export const FORMS = {
+  db_ctcp: {
+    title: 'Form Input CTCP Offset',
+    desc: 'Input laporan harian produksi plate CTCP',
+    url: ''
+  },
+  db_ctp: {
+    title: 'Form Input CTP Thermal',
+    desc: 'Input laporan harian produksi plate CTP',
+    url: ''
+  },
+  db_screen: {
+    title: 'Form Input Screen Printing',
+    desc: 'Input laporan harian afdruk & pembuatan screen',
+    url: ''
+  },
+  db_flexo: {
+    title: 'Form Input Flexography',
+    desc: 'Input laporan harian pembuatan plate flexo',
+    url: ''
+  },
+  db_etching: {
+    title: 'Form Input Etching Plate',
+    desc: 'Input laporan harian proses etching plate',
+    url: ''
+  }
+};
+
 // Kategori JOP
 export const JOP_CATS = [
   ['O', 'Offset'],
@@ -135,7 +164,7 @@ export const PROD_KEYS = [
   'db_etching'
 ];
 
-// Semua Kunci Sheet Termasuk Transaksi Database
+// Semua Kunci Sheet
 export const ALL_KEYS = [
   'db_ctcp',
   'db_ctp',
