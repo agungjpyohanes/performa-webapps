@@ -15,8 +15,7 @@ import { ShieldAlert, CheckCircle2, AlertTriangle, Layers, Percent, Activity } f
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function ExecutiveOverallView({ data, period }) {
-  // Hitung metrik keseluruhan per proses
+export default function ExecutiveOverallView({ data, period, onOpenList }) {
   const summaryByProcess = useMemo(() => {
     return PROD_KEYS.map(k => {
       const cfg = SHEETS[k];
@@ -56,12 +55,12 @@ export default function ExecutiveOverallView({ data, period }) {
         good,
         reject,
         replace,
-        lossRate
+        lossRate,
+        rows
       };
     });
   }, [data, period]);
 
-  // Metrik Total Prepress Keseluruhan
   const grandTotal = useMemo(() => {
     let output = 0, good = 0, reject = 0, replace = 0;
     summaryByProcess.forEach(p => {
@@ -74,15 +73,18 @@ export default function ExecutiveOverallView({ data, period }) {
     return { output, good, reject, replace, lossRate };
   }, [summaryByProcess]);
 
-  // Deteksi Anomali / Alert Center Otomatis
   const alerts = useMemo(() => {
     const res = [];
     summaryByProcess.forEach(p => {
-      if (p.lossRate > 4) {
+      // Toleransi max 1.0%
+      if (p.lossRate > 1.0) {
         res.push({
           level: 'CRITICAL',
+          key: p.key,
+          label: p.label,
           title: `Tingkat Loss ${p.label} Tinggi (${p.lossRate.toFixed(1)}%)`,
-          desc: `Lini ${p.label} melebihi batas toleransi target 3.0% dengan ${p.reject} unit reject.`
+          desc: `Lini ${p.label} melebihi batas toleransi target 1.0% dengan ${p.reject} unit reject. Klik untuk audit data.`,
+          rows: p.rows.filter(r => num(r[SHEETS[p.key].i.rusak]) > 0)
         });
       }
     });
@@ -91,7 +93,8 @@ export default function ExecutiveOverallView({ data, period }) {
       res.push({
         level: 'NORMAL',
         title: 'Semua Lini Berada Dalam Batas Normal',
-        desc: 'Seluruh lini produksi CTCP, CTP, Screen, Flexo, dan Etching memenuhi target mutu.'
+        desc: 'Seluruh lini produksi CTCP, CTP, Screen, Flexo, dan Etching memenuhi target mutu (Loss Rate &le; 1.0%).',
+        rows: []
       });
     }
 
@@ -109,7 +112,7 @@ export default function ExecutiveOverallView({ data, period }) {
           </div>
           <h2 className="font-display font-extrabold text-2xl mt-1.5">Executive Prepress Dashboard</h2>
           <p className="text-xs text-slate-300 mt-1 max-w-xl">
-            Ringkasan makro performa lintas divisi, perbandingan efisiensi 5 lini proses, dan deteksi anomali operasional.
+            Ringkasan makro performa lintas divisi, perbandingan efisiensi 5 lini proses, dan deteksi anomali operasional. Klik card, grafik, atau notifikasi alert untuk membuka detail transaksi.
           </p>
         </div>
         <div className="text-right">
@@ -152,10 +155,10 @@ export default function ExecutiveOverallView({ data, period }) {
             <span className="text-[11px] font-bold uppercase tracking-wider">OVERALL LOSS RATE</span>
             <Percent className="w-4 h-4 text-purple-500" />
           </div>
-          <div className={`mt-2 font-display font-extrabold text-2xl ${grandTotal.lossRate > 3 ? 'text-rose-600' : 'text-emerald-600'}`}>
+          <div className={`mt-2 font-display font-extrabold text-2xl ${grandTotal.lossRate > 1.0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {grandTotal.lossRate.toFixed(1)}%
           </div>
-          <div className="text-[10px] text-slate-400 mt-1">Toleransi Target: &lt; 3.0%</div>
+          <div className="text-[10px] text-slate-400 mt-1">Toleransi Target: &le; 1.0%</div>
         </div>
       </div>
 
@@ -163,7 +166,7 @@ export default function ExecutiveOverallView({ data, period }) {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card p-5">
           <h3 className="card-title mb-1">Perbandingan Output per Lini Proses</h3>
-          <p className="text-xs text-slate-500 mb-3">Distribusi volume pekerjaan antar unit mesin</p>
+          <p className="text-xs text-slate-500 mb-3">Klik batang grafik untuk melihat seluruh transaksi lini</p>
           <div className="h-64">
             <Bar
               data={{
@@ -173,14 +176,22 @@ export default function ExecutiveOverallView({ data, period }) {
                   { label: 'Reject', data: summaryByProcess.map(p => p.reject), backgroundColor: '#f43f5e', borderRadius: 4 }
                 ]
               }}
-              options={{ maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }}
+              options={{
+                maintainAspectRatio: false,
+                scales: { x: { stacked: true }, y: { stacked: true } },
+                onClick: (e, els) => {
+                  if (!els.length) return;
+                  const item = summaryByProcess[els[0].index];
+                  onOpenList?.(`Semua Transaksi ${item.label}`, item.key, item.rows);
+                }
+              }}
             />
           </div>
         </div>
 
         <div className="card p-5">
           <h3 className="card-title mb-1">Perbandingan Loss Rate (%) per Lini</h3>
-          <p className="text-xs text-slate-500 mb-3">Tingkat reject rate masing-masing mesin vs target (3%)</p>
+          <p className="text-xs text-slate-500 mb-3">Klik batang untuk melihat daftar reject pada lini terkait</p>
           <div className="h-64">
             <Bar
               data={{
@@ -189,21 +200,26 @@ export default function ExecutiveOverallView({ data, period }) {
                   {
                     label: 'Loss Rate (%)',
                     data: summaryByProcess.map(p => p.lossRate),
-                    backgroundColor: summaryByProcess.map(p => p.lossRate > 3 ? '#f43f5e' : '#10b981'),
+                    backgroundColor: summaryByProcess.map(p => p.lossRate > 1.0 ? '#f43f5e' : '#10b981'),
                     borderRadius: 4
                   }
                 ]
               }}
               options={{
                 maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
+                scales: { y: { beginAtZero: true } },
+                onClick: (e, els) => {
+                  if (!els.length) return;
+                  const item = summaryByProcess[els[0].index];
+                  onOpenList?.(`Reject Record ${item.label}`, item.key, item.rows.filter(r => num(r[SHEETS[item.key].i.rusak]) > 0));
+                }
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Alert Center Panel */}
+      {/* Alert Center Panel (Dapat Di-klik untuk Membuka Data) */}
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-3">
           <ShieldAlert className="w-5 h-5 text-amber-500" />
@@ -213,15 +229,25 @@ export default function ExecutiveOverallView({ data, period }) {
           {alerts.map((al, idx) => (
             <div
               key={idx}
-              className={`p-3 rounded-xl border flex items-start gap-3 ${
+              onClick={() => {
+                if (al.rows && al.rows.length > 0) {
+                  onOpenList?.(`Audit Loss: ${al.label}`, al.key, al.rows);
+                }
+              }}
+              className={`p-3 rounded-xl border flex items-start gap-3 transition ${
+                al.rows && al.rows.length > 0 ? 'cursor-pointer hover:shadow-md' : ''
+              } ${
                 al.level === 'CRITICAL'
                   ? 'bg-rose-50 border-rose-200 text-rose-800'
                   : 'bg-emerald-50 border-emerald-200 text-emerald-800'
               }`}
             >
               <Activity className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-bold text-xs">{al.title}</div>
+              <div className="flex-1">
+                <div className="font-bold text-xs flex items-center justify-between">
+                  <span>{al.title}</span>
+                  {al.rows && al.rows.length > 0 && <span className="text-[11px] underline font-semibold">Lihat Detail →</span>}
+                </div>
                 <div className="text-[11px] opacity-90 mt-0.5">{al.desc}</div>
               </div>
             </div>

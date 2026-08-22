@@ -21,15 +21,22 @@ export default function Header({ view, period, onPeriodChange, onReset, onOpenPr
 
   const getTitle = () => {
     if (type === 'overview') return 'Dashboard Overview';
-    if (type === 'prod') return `Dashboard Produksi — ${SHEETS[key]?.label}`;
-    if (type === 'data') return `Data Produksi — ${SHEETS[key]?.label}`;
+    if (type === 'prod') return `Dashboard Produksi — ${SHEETS[key]?.label || ''}`;
+    if (type === 'data') return `Data Produksi — ${SHEETS[key]?.label || ''}`;
     if (type === 'compare') return 'Dashboard Komparasi';
-    return 'Form Permintaan';
+    if (type === 'analytics') return `Analytics ${SHEETS[key]?.label || ''}`;
+    if (type === 'operator_shift') return 'Evaluasi Operator, PO & Shift';
+    if (type === 'executive_overall') return 'Executive Dashboard Overall';
+    if (type === 'forms') return 'Form Permintaan';
+    return 'Dashboard Prepress';
   };
 
   const getSub = () => {
     if (type === 'overview') return 'Ringkasan SCREEN · FLEXO · ETCHING';
     if (type === 'compare') return 'Bandingkan capaian antar periode';
+    if (type === 'analytics') return `Audit parameter mutu & mesin — ${SHEETS[key]?.label || ''}`;
+    if (type === 'operator_shift') return 'Analisis produktivitas individu dan efisiensi giliran kerja';
+    if (type === 'executive_overall') return 'Pusat kendali makro lintas seluruh lini proses';
     if (type === 'forms') return 'Terhubung langsung ke Google Form';
     return SHEETS[key]?.desc || '';
   };
