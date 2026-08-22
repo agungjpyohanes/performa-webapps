@@ -1,122 +1,101 @@
 import React, { useState, useMemo } from 'react';
 import { SHEETS } from '../../constants/schema';
-import { parseDateVal, fmtDate } from '../../utils/formatters';
-import { Search } from 'lucide-react';
+import { cell, parseDateVal, startOfDay, endOfDay, fmtDate } from '../../utils/formatters';
+import { Search, Download } from 'lucide-react';
 
-export default function DataTableView({ tabKey, data, period, onSelectRow }) {
-  const cfg = SHEETS[tabKey];
-  const rawRows = data[tabKey] || [];
+export default function DataTableView({ tabKey = 'db_ctcp', data = {}, period, onSelectRow }) {
   const [search, setSearch] = useState('');
-  const [sortCol, setSortCol] = useState(cfg.i.date);
-  const [sortDir, setSortDir] = useState(-1); // -1: Descending, 1: Ascending
+  const cfg = SHEETS[tabKey] || { label: tabKey, headers: [], i: { id: 0, jop: 1, nojop: 2, date: 4 } };
 
-  // Filter Periode & Search Query
-  const filteredRows = useMemo(() => {
-    return rawRows.filter(r => {
-      const idVal = String(r[cfg.i.id] || '').trim();
-      const jopVal = String(r[cfg.i.jop] || '').trim();
-      const noJopVal = String(r[cfg.i.nojop] || '').trim();
+  const filtered = useMemo(() => {
+    const raw = data[tabKey] || [];
+    const fromTime = period?.from ? startOfDay(period.from).getTime() : null;
+    const toTime = period?.to ? endOfDay(period.to).getTime() : null;
+    const q = search.trim().toLowerCase();
+
+    return raw.filter((r) => {
+      const idVal = cell(r, cfg.i.id).trim();
+      const jopVal = cell(r, cfg.i.jop).trim();
+      const noJopVal = cell(r, cfg.i.nojop).trim();
       if (!idVal || (!jopVal && !noJopVal)) return false;
 
       const d = parseDateVal(r[cfg.i.date]);
-      const from = period.from ? new Date(period.from).setHours(0, 0, 0, 0) : null;
-      const to = period.to ? new Date(period.to).setHours(23, 59, 59, 999) : null;
       if (d) {
-        if (from && d.getTime() < from) return false;
-        if (to && d.getTime() > to) return false;
+        const t = d.getTime();
+        if (fromTime && t < fromTime) return false;
+        if (toTime && t > toTime) return false;
       }
 
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        return cfg.dataCols.some(ci => String(r[ci] || '').toLowerCase().includes(q));
+      if (q) {
+        return r.some((c) => String(c || '').toLowerCase().includes(q));
       }
       return true;
     });
-  }, [rawRows, cfg, period, search]);
+  }, [data, tabKey, period, search, cfg]);
 
-  // Sorting
-  const sortedRows = useMemo(() => {
-    return [...filteredRows].sort((a, b) => {
-      const va = a[sortCol];
-      const vb = b[sortCol];
-      if (sortCol === cfg.i.date) {
-        const da = parseDateVal(va)?.getTime() || 0;
-        const db = parseDateVal(vb)?.getTime() || 0;
-        return (da - db) * sortDir;
-      }
-      return String(va || '').localeCompare(String(vb || ''), 'id') * sortDir;
-    });
-  }, [filteredRows, sortCol, sortDir, cfg]);
-
-  const handleSort = (colIdx) => {
-    if (sortCol === colIdx) {
-      setSortDir(prev => prev * -1);
-    } else {
-      setSortCol(colIdx);
-      setSortDir(1);
-    }
-  };
+  const headers = cfg.headers && cfg.headers.length > 0 
+    ? cfg.headers 
+    : ['ID', 'JOP Name', 'No JOP', 'No Plate/B', 'Date', 'Param 1', 'Param 2', 'Param 3', 'Baru', 'Ganti', 'Baik', 'Rusak', 'Sebab Ganti', 'Ket', 'Sebab Rusak', 'Shift', 'Operator', 'PO'];
 
   return (
-    <div className="space-y-4">
-      {/* Header & Search */}
-      <div className="card p-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="card p-5 bg-white space-y-4 anim-in">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="card-title font-display font-bold text-slate-800">Data Produksi {cfg.label}</h3>
-          <p className="text-xs text-slate-500">Klik baris untuk melihat detail semua kolom</p>
+          <h2 className="font-display font-extrabold text-lg text-slate-800">
+            Database Transaksi — {cfg.label}
+          </h2>
+          <p className="text-xs text-slate-500">
+            Menampilkan <b>{filtered.length.toLocaleString('id-ID')} baris</b> data
+          </p>
         </div>
+
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              placeholder="Cari ID, JOP, Operator..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Cari ID / JOP..."
-              className="pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-600 focus:bg-white w-48 sm:w-60"
+              onChange={(e) => setSearch(e.target.value)}
+              className="inp !pl-8 text-xs py-1.5 w-48 sm:w-64"
             />
           </div>
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-            {sortedRows.length} baris
-          </span>
         </div>
       </div>
 
-      {/* Tabel */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto max-h-[65vh]">
-          <table className="tbl">
-            <thead>
-              <tr>
-                {cfg.dataCols.map(ci => (
-                  <th key={ci} onClick={() => handleSort(ci)} className="cursor-pointer select-none hover:text-blue-600">
-                    {cfg.headers[ci]} {sortCol === ci ? (sortDir === 1 ? '▲' : '▼') : ''}
-                  </th>
+      <div className="overflow-x-auto border border-slate-200 rounded-xl max-h-[600px]">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="sticky top-0 bg-slate-100 z-10">
+            <tr className="border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
+              <th className="py-2.5 px-3">No</th>
+              {headers.map((h, i) => (
+                <th key={i} className="py-2.5 px-3 whitespace-nowrap">{h.replace(/_/g, ' ')}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filtered.slice(0, 200).map((row, idx) => (
+              <tr
+                key={idx}
+                onClick={() => onSelectRow?.(tabKey, row)}
+                className="hover:bg-slate-50 transition cursor-pointer"
+              >
+                <td className="py-2 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                {headers.map((_, colIdx) => (
+                  <td key={colIdx} className="py-2 px-3 whitespace-nowrap text-slate-700">
+                    {colIdx === cfg.i.date ? fmtDate(row[colIdx]) : (row[colIdx] ?? '-')}
+                  </td>
                 ))}
               </tr>
-            </thead>
-            <tbody>
-              {sortedRows.length === 0 ? (
-                <tr>
-                  <td colSpan={cfg.dataCols.length} className="text-center py-10 text-slate-400 text-xs">
-                    Tidak ada data yang cocok pada periode ini.
-                  </td>
-                </tr>
-              ) : (
-                sortedRows.map((r, idx) => (
-                  <tr key={idx} onClick={() => onSelectRow(tabKey, r)}>
-                    {cfg.dataCols.map(ci => (
-                      <td key={ci} className={ci === cfg.i.date ? 'text-blue-600' : ''}>
-                        {ci === cfg.i.date ? fmtDate(r[ci]) : (r[ci] || '—')}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
+      {filtered.length > 200 && (
+        <p className="text-center text-[11px] text-slate-400">
+          Menampilkan 200 baris pertama. Gunakan kolom pencarian di atas untuk menyaring data spesifik.
+        </p>
+      )}
     </div>
   );
 }
