@@ -1,29 +1,33 @@
 import React, { useMemo } from 'react';
 import { SHEETS, PROD_KEYS } from '../../constants/schema';
-import { num, cell, fmtPeriodRange } from '../../utils/formatters';
-import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { ShieldAlert, AlertTriangle, CheckCircle2, TrendingUp, Layers, Percent } from 'lucide-react';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import { num, cell, fmtPeriodRange, parseDateVal, startOfDay } from '../../utils/formatters';
+import { Layers, CheckCircle2, AlertTriangle, Percent, ShieldAlert } from 'lucide-react';
 
 export default function ExecutiveOverallView({ data = {}, period, onOpenList }) {
-  // Kompilasi Matriks KPI Tiap Lini
+  // Filter baris transaksi per-lini berdasarkan rentang tanggal
   const lineMetrics = useMemo(() => {
     return PROD_KEYS.map((k) => {
-      const cfg = SHEETS[k] || { label: k, unit: 'Unit', i: { baik: 0, rusak: 0, ganti: 0 } };
-      const rows = data[k] || [];
+      const cfg = SHEETS[k] || { label: k, unit: 'Unit', i: { baik: 0, rusak: 0, ganti: 0, date: 4, id: 0, jop: 1, nojop: 2 } };
+      const rawRows = data[k] || [];
+
+      // Filter tanggal
+      const filteredRows = rawRows.filter((r) => {
+        const idVal = cell(r, cfg.i.id).trim();
+        const jopVal = cell(r, cfg.i.jop).trim();
+        const noJopVal = cell(r, cfg.i.nojop).trim();
+        if (!idVal || (!jopVal && !noJopVal)) return false;
+
+        const d = parseDateVal(r[cfg.i.date]);
+        if (!d) return true;
+        const from = period?.from ? startOfDay(period.from).getTime() : null;
+        const to = period?.to ? new Date(period.to).setHours(23, 59, 59, 999) : null;
+        if (from && d.getTime() < from) return false;
+        if (to && d.getTime() > to) return false;
+        return true;
+      });
 
       let good = 0, reject = 0, replace = 0;
-      rows.forEach((r) => {
+      filteredRows.forEach((r) => {
         good += num(r[cfg.i.baik]);
         reject += num(r[cfg.i.rusak]);
         replace += num(r[cfg.i.ganti]);
@@ -31,13 +35,13 @@ export default function ExecutiveOverallView({ data = {}, period, onOpenList }) 
 
       const output = good + reject;
       const lossRate = output > 0 ? (reject / output) * 100 : 0;
-      const targetLoss = 1.0; // Target Standar 1.0%
+      const targetLoss = 1.0;
 
       return {
         key: k,
         label: cfg.label,
         unit: cfg.unit,
-        rows,
+        rows: filteredRows,
         good,
         reject,
         replace,
@@ -46,17 +50,16 @@ export default function ExecutiveOverallView({ data = {}, period, onOpenList }) 
         isCritical: lossRate > targetLoss
       };
     });
-  }, [data]);
+  }, [data, period]);
 
-  // Executive Summary Global
+  // Ringkasan Global
   const totalOutput = lineMetrics.reduce((a, b) => a + b.output, 0);
   const totalGood = lineMetrics.reduce((a, b) => a + b.good, 0);
   const totalReject = lineMetrics.reduce((a, b) => a + b.reject, 0);
   const totalReplace = lineMetrics.reduce((a, b) => a + b.replace, 0);
   const overallLossRate = totalOutput > 0 ? (totalReject / totalOutput) * 100 : 0;
 
-  // Alert Center Triggers
-  const criticalLines = lineMetrics.filter((m) => m.isCritical);
+  const criticalLines = lineMetrics.filter((m) => m.isCritical && m.output > 0);
 
   return (
     <div className="space-y-4 anim-in">
@@ -88,7 +91,7 @@ export default function ExecutiveOverallView({ data = {}, period, onOpenList }) 
           <div className="mt-2 font-display font-extrabold text-2xl text-slate-800">
             {totalOutput.toLocaleString('id-ID')}
           </div>
-          <div className="text-[10px] text-slate-400 mt-1">Akumulasi seluruh lini</div>
+          <div className="text-[10px] text-slate-400 mt-1">Akumulasi sesuai tanggal</div>
         </div>
 
         <div className="card p-4 bg-white border-l-4 border-l-emerald-500">
@@ -121,7 +124,7 @@ export default function ExecutiveOverallView({ data = {}, period, onOpenList }) 
           <div className={`mt-2 font-display font-extrabold text-2xl ${overallLossRate > 1.0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {overallLossRate.toFixed(2)}%
           </div>
-          <div className="text-[10px] text-slate-400 mt-1">Batas Maksimum &le; 1.00%</div>
+          <div className="text-[10px] text-slate-400 mt-1">Target Toleransi &le; 1.00%</div>
         </div>
       </div>
 
@@ -148,7 +151,7 @@ export default function ExecutiveOverallView({ data = {}, period, onOpenList }) 
                   <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>
                     🔴 <b>Kritis:</b> Lini {m.label} memiliki Loss Rate sebesar{' '}
-                    <b>{m.lossRate.toFixed(1)}%</b> (Melebihi toleransi target 1.0%).
+                    <b>{m.lossRate.toFixed(1)}%</b> (Melebihi target 1.0%).
                   </span>
                 </div>
                 <button
