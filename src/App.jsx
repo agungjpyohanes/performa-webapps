@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProductionData } from './hooks/useProductionData';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { SHEETS } from './constants/schema';
-import { fmtDate, num, cell, fmtPeriodRange, startOfDay } from './utils/formatters';
+import { fmtDate, num, cell, fmtPeriodRange, startOfDay, parseDateVal } from './utils/formatters';
 
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -12,6 +12,12 @@ import ProductionView from './components/views/ProductionView';
 import CompareView from './components/views/CompareView';
 import DataTableView from './components/views/DataTableView';
 import FormsView from './components/views/FormsView';
+
+// Modul Baru Internal Prepress & Management
+import ProcessAnalyticsView from './components/views/ProcessAnalyticsView';
+import OperatorShiftView from './components/views/OperatorShiftView';
+import ExecutiveOverallView from './components/views/ExecutiveOverallView';
+
 import Modal from './components/common/Modal';
 
 export default function App() {
@@ -54,7 +60,6 @@ export default function App() {
     addToast('Anda telah keluar', 'info');
   };
 
-  // Modal Handlers
   const openDetail = (key, row, withBack = false) => {
     const cfg = SHEETS[key];
     setModalState({
@@ -85,33 +90,33 @@ export default function App() {
     if (metric === 'baik') {
       list = rows.filter(r => num(r[cfg.i.baik]) > 0);
       valFn = r => num(r[cfg.i.baik]);
-      valLabel = cfg.unit + ' Baik';
+      valLabel = cfg.unit + ' Good';
     } else if (metric === 'rusak') {
       list = rows.filter(r => num(r[cfg.i.rusak]) > 0);
       valFn = r => num(r[cfg.i.rusak]);
-      valLabel = cfg.unit + ' Rusak';
+      valLabel = cfg.unit + ' Reject';
       causeIdx = cfg.i.penyRusak;
     } else if (metric === 'ganti') {
       list = rows.filter(r => num(r[cfg.i.ganti]) > 0);
       valFn = r => num(r[cfg.i.ganti]);
-      valLabel = cfg.unit + ' Ganti';
+      valLabel = cfg.unit + ' Replace';
       causeIdx = cfg.i.penyGanti;
     } else if (metric === 'pakai') {
       list = rows;
       valFn = r => num(r[cfg.i.baik]) + num(r[cfg.i.rusak]);
-      valLabel = 'Baik + Rusak';
+      valLabel = 'Output (Good + Reject)';
     } else {
       list = rows.filter(r => num(r[cfg.i.rusak]) > 0);
       valFn = r => {
         const b = num(r[cfg.i.baik]), rk = num(r[cfg.i.rusak]);
         return (b + rk) > 0 ? (rk / (b + rk) * 100) : 0;
       };
-      valLabel = '% Rusak';
+      valLabel = '% Loss Rate';
     }
 
     const stateObj = {
       type: 'metric',
-      title: metric === 'pct' ? `Total ${cfg.unit} Rusak (%)` : cfg.cards[metric],
+      title: metric === 'pct' ? `Total Loss Rate (%)` : cfg.cards[metric],
       key,
       rows: list,
       metric,
@@ -142,6 +147,9 @@ export default function App() {
     if (viewType === 'prod') return `Dashboard Produksi — ${SHEETS[viewKey]?.label}`;
     if (viewType === 'data') return `Data Produksi — ${SHEETS[viewKey]?.label}`;
     if (viewType === 'compare') return 'Dashboard Komparasi';
+    if (viewType === 'analytics') return `Analytics ${SHEETS[viewKey]?.label}`;
+    if (viewType === 'operator_shift') return 'Evaluasi Operator & Shift';
+    if (viewType === 'executive_overall') return 'Executive Dashboard';
     return 'Form Permintaan';
   };
 
@@ -173,7 +181,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* Header Khusus Media Print */}
+      {/* Header Khusus Print */}
       <div id="printHead">
         <div className="flex items-center gap-3">
           <img className="w-10 h-10" src="https://drive.google.com/thumbnail?id=1lH4lh1q8CrraoC1fMY1q7tf3B0nezFiJ&sz=w512" alt="print logo" />
@@ -248,6 +256,28 @@ export default function App() {
                   data={data}
                   period={period}
                   onSelectRow={openDetail}
+                />
+              )}
+
+              {viewType === 'analytics' && (
+                <ProcessAnalyticsView
+                  tabKey={viewKey}
+                  data={data}
+                  period={period}
+                />
+              )}
+
+              {viewType === 'operator_shift' && (
+                <OperatorShiftView
+                  data={data}
+                  period={period}
+                />
+              )}
+
+              {viewType === 'executive_overall' && (
+                <ExecutiveOverallView
+                  data={data}
+                  period={period}
                 />
               )}
 
