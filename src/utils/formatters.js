@@ -45,7 +45,7 @@ export const parseDateVal = (val) => {
   return null;
 };
 
-// Format Date ke string ISO Date (YYYY-MM-DD)
+// Format Date ke ISO Date string (YYYY-MM-DD)
 export const iso = (d) => {
   const parsed = parseDateVal(d);
   if (!parsed) return '';
@@ -68,6 +68,28 @@ export const hexA = (hex, alpha = 0.2) => {
   const g = (numVal >> 8) & 255;
   const b = numVal & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Klasifikasi Kategori JOP berdasarkan kode/nama JOP
+export const jopCat = (jopName) => {
+  const s = String(jopName || '').toUpperCase();
+  if (s.startsWith('O') || s.includes('OFFSET')) return 'Offset';
+  if (s.startsWith('F') || s.includes('FLEXO')) return 'Flexo';
+  if (s.startsWith('S') || s.includes('SCREEN') || s.includes('SABLON')) return 'Screen';
+  if (s.startsWith('E') || s.includes('ETCHING')) return 'Etching';
+  if (s.startsWith('D') || s.includes('DIGITAL')) return 'Digital';
+  return 'Lainnya';
+};
+
+// Helper Agregasi Frekuensi Array (Count By)
+export const countBy = (arr, fn) => {
+  return (arr || []).reduce((acc, item) => {
+    const key = typeof fn === 'function' ? fn(item) : item[fn];
+    if (key !== undefined && key !== null && key !== '') {
+      acc[key] = (acc[key] || 0) + 1;
+    }
+    return acc;
+  }, {});
 };
 
 // Normalisasi ke awal hari (00:00:00.000)
