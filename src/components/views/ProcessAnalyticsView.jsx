@@ -12,7 +12,7 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
-import { CheckCircle2, AlertTriangle, RotateCcw, Layers, Percent, Award, Search, Users } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, RotateCcw, Layers, Percent, Award, Search, Users, Briefcase } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -20,7 +20,9 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
   const activeKey = tabKey || 'db_ctcp';
   const cfg = SHEETS[activeKey] || SHEETS.db_ctcp;
   const rawRows = data[activeKey] || [];
-  const [searchOp, setSearchOp] = useState('');
+  
+  const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('OP'); // 'OP' atau 'PO'
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter baris data yang valid & sesuai rentang tanggal
   const rows = useMemo(() => {
@@ -40,7 +42,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
     });
   }, [rawRows, cfg, period]);
 
-  // Kalkulasi Metrik Utama KPI
+  // Kalkulasi Metrik Utama KPI (Skor: max(0, 100 - lossRate * 10))
   const kpi = useMemo(() => {
     let good = 0, reject = 0, replace = 0;
     rows.forEach(r => {
@@ -50,7 +52,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
     });
     const output = good + reject;
     const lossRate = output > 0 ? (reject / output) * 100 : 0;
-    const perfScore = output > 0 ? Math.max(0, 100 - lossRate) : 100;
+    const perfScore = output > 0 ? Math.max(0, 100 - (lossRate * 10)) : 100;
     return { good, reject, replace, output, lossRate, perfScore };
   }, [rows, cfg]);
 
@@ -93,19 +95,19 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
     };
   }, [rows, activeKey, cfg]);
 
-  // Analisis Jenis Kertas (Khusus CTCP & CTP) atau Tebal Plate (Khusus Etching)
+  // Breakdown Mesin Cetak (Khusus CTCP & CTP) atau Tebal Plate (Khusus Etching)
   const secondaryParamData = useMemo(() => {
     if (activeKey === 'db_ctcp' || activeKey === 'db_ctp') {
       const map = new Map();
       rows.forEach(r => {
-        const paper = cell(r, 6).trim() || 'Standard Paper';
-        const e = map.get(paper) || { good: 0, reject: 0 };
+        const printMachine = cell(r, 6).trim() || 'Mesin Cetak Standar';
+        const e = map.get(printMachine) || { good: 0, reject: 0 };
         e.good += num(r[cfg.i.baik]);
         e.reject += num(r[cfg.i.rusak]);
-        map.set(paper, e);
+        map.set(printMachine, e);
       });
-      const labels = [...map.keys()].slice(0, 6);
-      return { title: 'Breakdown Jenis Kertas', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
+      const labels = [...map.keys()].slice(0, 8);
+      return { title: 'Breakdown Mesin Cetak', labels, good: labels.map(l => map.get(l).good), reject: labels.map(l => map.get(l).reject) };
     }
     if (activeKey === 'db_etching') {
       const map = new Map();
@@ -171,39 +173,63 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
     };
   }, [rows, cfg]);
 
-  // Evaluasi Operator / PO
-  const operatorRanking = useMemo(() => {
+  // Perhitungan Grade
+  const calculateGrade = (lossRate) => {
+    if (lossRate <= 2.0) return 'A';
+    if (lossRate <= 4.0) return 'B';
+    if (lossRate <= 6.0) return 'C';
+    return 'D';
+  };
+
+  // Evaluasi Operator Terpisah
+  const opRanking = useMemo(() => {
     const map = new Map();
     rows.forEach(r => {
       const op = cell(r, cfg.i.op).trim() || 'Unassigned';
-      const po = cell(r, 17).trim();
-      const key = po ? `${op} (${po})` : op;
-
-      const e = map.get(key) || { name: key, op, po, good: 0, reject: 0, replace: 0 };
+      const e = map.get(op) || { name: op, good: 0, reject: 0, replace: 0 };
       e.good += num(r[cfg.i.baik]);
       e.reject += num(r[cfg.i.rusak]);
       e.replace += num(r[cfg.i.ganti]);
-      map.set(key, e);
+      map.set(op, e);
     });
 
     return [...map.values()]
       .map(o => {
         const output = o.good + o.reject;
         const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
-        let grade = 'A';
-        if (lossRate > 6) grade = 'D';
-        else if (lossRate > 4) grade = 'C';
-        else if (lossRate > 2) grade = 'B';
-        return { ...o, output, lossRate, grade };
+        return { ...o, output, lossRate, grade: calculateGrade(lossRate) };
       })
       .sort((a, b) => b.output - a.output);
   }, [rows, cfg]);
 
-  const filteredOperators = useMemo(() => {
-    if (!searchOp.trim()) return operatorRanking;
-    const q = searchOp.toLowerCase();
-    return operatorRanking.filter(o => o.name.toLowerCase().includes(q));
-  }, [operatorRanking, searchOp]);
+  // Evaluasi PO Terpisah
+  const poRanking = useMemo(() => {
+    const map = new Map();
+    rows.forEach(r => {
+      const po = cell(r, 17).trim() || 'Tanpa PO';
+      const e = map.get(po) || { name: po, good: 0, reject: 0, replace: 0 };
+      e.good += num(r[cfg.i.baik]);
+      e.reject += num(r[cfg.i.rusak]);
+      e.replace += num(r[cfg.i.ganti]);
+      map.set(po, e);
+    });
+
+    return [...map.values()]
+      .map(o => {
+        const output = o.good + o.reject;
+        const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
+        return { ...o, output, lossRate, grade: calculateGrade(lossRate) };
+      })
+      .sort((a, b) => b.output - a.output);
+  }, [rows, cfg]);
+
+  const activeLeaderboardData = activeLeaderboardTab === 'OP' ? opRanking : poRanking;
+
+  const filteredLeaderboard = useMemo(() => {
+    if (!searchQuery.trim()) return activeLeaderboardData;
+    const q = searchQuery.toLowerCase();
+    return activeLeaderboardData.filter(o => o.name.toLowerCase().includes(q));
+  }, [activeLeaderboardData, searchQuery]);
 
   const getGradeBadgeClass = (grade) => {
     if (grade === 'A') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
@@ -223,7 +249,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
           </div>
           <h2 className="font-display font-extrabold text-2xl mt-1.5">{cfg.label} Performance & Parameter Control</h2>
           <p className="text-xs text-slate-300 mt-1 max-w-xl">
-            Audit mendalam efisiensi mesin, jenis paper/material, kategori JOP, performa shift, dan evaluasi operator/PO.
+            Audit mendalam efisiensi mesin expose/cetak, kategori JOP, performa shift, dan evaluasi performa individu Operator vs PO.
           </p>
         </div>
         <div className="text-right">
@@ -279,7 +305,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
           <div className={`mt-2 font-display font-extrabold text-2xl ${kpi.lossRate > 3 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {kpi.lossRate.toFixed(1)}%
           </div>
-          <div className="text-[10px] text-slate-400 mt-1">Target &lt; 3.0%</div>
+          <div className="text-[10px] text-slate-400 mt-1">Target &le; 2.0%</div>
         </div>
 
         <div className="card p-4 bg-white border-l-4 border-l-cyan-500">
@@ -339,11 +365,11 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
           </div>
         </div>
 
-        {/* Parameter Sekunder: Paper Type atau Tebal Plate (Jika Ada) */}
+        {/* Parameter Sekunder: Mesin Cetak atau Tebal Plate */}
         {secondaryParamData && (
           <div className="card p-5">
             <h3 className="card-title mb-1">{secondaryParamData.title}</h3>
-            <p className="text-xs text-slate-500 mb-3">Audit kualitas material pada lini {cfg.label}</p>
+            <p className="text-xs text-slate-500 mb-3">Evaluasi distribusi beban pada lini {cfg.label}</p>
             <div className="h-64">
               <Bar
                 data={{
@@ -380,26 +406,54 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
         </div>
       </div>
 
-      {/* Operator & PO Performance Leaderboard */}
+      {/* Leaderboard Terpisah OP vs PO */}
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600" />
-              <h3 className="card-title">Leaderboard Performa Operator & PO</h3>
+              {activeLeaderboardTab === 'OP' ? (
+                <Users className="w-5 h-5 text-indigo-600" />
+              ) : (
+                <Briefcase className="w-5 h-5 text-amber-600" />
+              )}
+              <h3 className="card-title">
+                {activeLeaderboardTab === 'OP' ? 'Leaderboard Performa Operator' : 'Leaderboard Performa PO (Customer)'}
+              </h3>
             </div>
-            <p className="text-xs text-slate-500">Evaluasi produktivitas, rasio reject, dan grading individu</p>
+            <p className="text-xs text-slate-500">Evaluasi produktivitas, rasio loss rate, dan penilaian grade mutu</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari Operator / PO..."
-              value={searchOp}
-              onChange={e => setSearchOp(e.target.value)}
-              className="bg-transparent text-xs outline-none w-full text-slate-700"
-            />
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Tab Selector OP vs PO */}
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <button
+                onClick={() => { setActiveLeaderboardTab('OP'); setSearchQuery(''); }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  activeLeaderboardTab === 'OP' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'
+                }`}
+              >
+                Operator
+              </button>
+              <button
+                onClick={() => { setActiveLeaderboardTab('PO'); setSearchQuery(''); }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  activeLeaderboardTab === 'PO' ? 'bg-white shadow text-amber-700' : 'text-slate-500'
+                }`}
+              >
+                PO
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-full sm:w-56">
+              <Search className="w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder={activeLeaderboardTab === 'OP' ? 'Cari Operator...' : 'Cari PO...'}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs outline-none w-full text-slate-700"
+              />
+            </div>
           </div>
         </div>
 
@@ -408,7 +462,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
                 <th className="py-2.5 px-3">Rank</th>
-                <th className="py-2.5 px-3">Nama Operator / PO</th>
+                <th className="py-2.5 px-3">{activeLeaderboardTab === 'OP' ? 'Nama Operator' : 'Nama PO'}</th>
                 <th className="py-2.5 px-3">Total Output</th>
                 <th className="py-2.5 px-3">Good</th>
                 <th className="py-2.5 px-3">Reject</th>
@@ -418,7 +472,7 @@ export default function ProcessAnalyticsView({ tabKey, data, period }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOperators.map((o, idx) => (
+              {filteredLeaderboard.map((o, idx) => (
                 <tr key={o.name} className="hover:bg-slate-50/80 transition">
                   <td className="py-2 px-3 font-bold text-slate-400">#{idx + 1}</td>
                   <td className="py-2 px-3 font-semibold text-slate-800">{o.name}</td>

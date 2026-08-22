@@ -103,10 +103,10 @@ export default function AuthView({ usersData = [], onLoginSuccess, onToast, serv
             alt="logo main"
           />
           <h1 className="font-display text-5xl font-extrabold leading-tight mt-6">
-            Performa<br />Produksi
+            Performa<br />Prepress
           </h1>
           <p className="mt-4 text-slate-300 max-w-md text-sm leading-relaxed">
-            Pusat kendali data produksi prepress — monitoring plate CTCP & CTP, screen, flexo, dan etching terintegrasi Supabase PostgreSQL.
+            Pusat kendali data produksi prepress — monitoring plate CTCP & CTP, screen, flexo, dan etching.
           </p>
 
           <div className="mt-7 flex gap-2 flex-wrap text-[11px] font-semibold">
