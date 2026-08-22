@@ -13,7 +13,6 @@ import CompareView from './components/views/CompareView';
 import DataTableView from './components/views/DataTableView';
 import FormsView from './components/views/FormsView';
 
-// Modul Baru Internal Prepress & Management
 import ProcessAnalyticsView from './components/views/ProcessAnalyticsView';
 import OperatorShiftView from './components/views/OperatorShiftView';
 import ExecutiveOverallView from './components/views/ExecutiveOverallView';
@@ -170,7 +169,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f2f5fb] text-slate-800">
-      {/* Toast Notification */}
       <div id="toasts" className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
         {toasts.map(t => (
           <div
@@ -181,7 +179,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* Header Khusus Print */}
       <div id="printHead">
         <div className="flex items-center gap-3">
           <img className="w-10 h-10" src="https://drive.google.com/thumbnail?id=1lH4lh1q8CrraoC1fMY1q7tf3B0nezFiJ&sz=w512" alt="print logo" />
