@@ -1,178 +1,192 @@
 import React, { useMemo } from 'react';
 import { OVER_SETS, SHEETS } from '../../constants/schema';
-import { parseDateVal, fmtDate, isDone, hexA, cell, startOfDay, endOfDay } from '../../utils/formatters';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { num, cell, parseDateVal } from '../../utils/formatters';
+import { Bar, Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+} from 'chart.js';
+import { Layers, CheckCircle2, AlertTriangle, RotateCcw, Percent } from 'lucide-react';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-export default function OverviewView({ data, onOpenList, onSelectRow, onOpenDayModal }) {
-  const t0 = useMemo(() => startOfDay(new Date()), []);
-  const minDate = useMemo(() => {
-    const d = new Date(t0);
-    d.setDate(d.getDate() - 2);
-    return d;
-  }, [t0]);
+export default function OverviewView({ data = {}, onOpenList, onSelectRow }) {
+  const sets = OVER_SETS || [];
 
-  const sets = useMemo(() => {
-    return OVER_SETS.map(s => {
-      const cfg = SHEETS[s.key];
-      const rawRows = data[s.key] || [];
-      const un = [];
-      const done = [];
+  const metrics = useMemo(() => {
+    return sets.map(s => {
+      const cfg = SHEETS[s.key] || { i: { baik: 0, rusak: 0, ganti: 0, id: 0, jop: 1, nojop: 2, date: 4 } };
+      const rows = data[s.key] || [];
 
-      rawRows.forEach((r, ix) => {
-        const idVal = cell(r, cfg.i.id).trim();
-        const jopVal = cell(r, cfg.i.jop).trim();
-        const noJopVal = cell(r, cfg.i.nojop).trim();
-        if (!idVal || (!jopVal && !noJopVal)) return;
-
-        if (!isDone(cell(r, cfg.i.status))) {
-          un.push({ key: s.key, cfg, ix, r });
-        } else {
-          const d = parseDateVal(r[cfg.i.date]);
-          if (d && d >= minDate && d <= endOfDay(t0)) {
-            done.push({ key: s.key, cfg, ix, r });
-          }
-        }
+      let good = 0, reject = 0, replace = 0;
+      rows.forEach(r => {
+        good += num(r[cfg.i.baik]);
+        reject += num(r[cfg.i.rusak]);
+        replace += num(r[cfg.i.ganti]);
       });
-      return { ...s, cfg, un, done };
+
+      const output = good + reject;
+      const lossRate = output > 0 ? (reject / output) * 100 : 0;
+
+      return {
+        ...s,
+        rows,
+        good,
+        reject,
+        replace,
+        output,
+        lossRate
+      };
     });
-  }, [data, minDate, t0]);
+  }, [data, sets]);
 
-  const totalUn = sets.reduce((a, s) => a + s.un.length, 0);
-  const totalDone = sets.reduce((a, s) => a + s.done.length, 0);
-
-  const pieChartData = {
-    labels: sets.map(s => s.label),
-    datasets: [{
-      data: sets.map(s => s.un.length),
-      backgroundColor: sets.map(s => s.color),
-      borderWidth: 3,
-      borderColor: '#fff',
-      hoverOffset: 10
-    }]
-  };
-
-  const pieOptions = {
-    maintainAspectRatio: false,
-    cutout: '55%',
-    plugins: {
-      legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { family: 'Inter' } } }
-    },
-    onClick: (e, els) => {
-      if (!els.length) return;
-      const s = sets[els[0].index];
-      onOpenList(`Pekerjaan ${s.label} — Belum Selesai`, s.key, s.un.map(x => x.r), 'Status belum SELESAI · Kolom 1-7');
-    }
-  };
-
-  const renderTable = (items) => {
-    if (!items.length) {
-      return <div className="text-center py-10 text-slate-400 text-xs">Tidak ada data</div>;
-    }
-    const head = ['Jenis', 'ID', 'JOP Name', 'No JOP', 'No B/Plate', 'Tipe/Status', 'Status/Date', 'Tanggal/Shift'];
-    return (
-      <table className="tbl">
-        <thead>
-          <tr>
-            {head.map(h => <th key={h}>{h}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, idx) => {
-            const c = it.cfg;
-            const r = it.r;
-            const d = parseDateVal(r[c.i.date]);
-            const st = cell(r, c.i.status);
-            return (
-              <tr key={idx} onClick={() => onSelectRow(it.key, r)}>
-                <td>
-                  <span className="badge" style={{ background: hexA(SHEETS[it.key].color, 0.12), color: SHEETS[it.key].color }}>
-                    {SHEETS[it.key].label}
-                  </span>
-                </td>
-                <td className="font-semibold text-slate-700">{cell(r, 0)}</td>
-                <td>{cell(r, 1)}</td>
-                <td>{cell(r, 2)}</td>
-                <td>{cell(r, 3)}</td>
-                <td>{cell(r, 4)}</td>
-                <td>
-                  <span className={`badge ${isDone(st) ? 'bg-emerald-50 text-emerald-700' : st.includes('PROSES') ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {st || '—'}
-                  </span>
-                </td>
-                <td
-                  onClick={(e) => { e.stopPropagation(); if (d) onOpenDayModal(it.key, startOfDay(d).getTime()); }}
-                  className="!cursor-pointer text-blue-600 underline decoration-dotted underline-offset-2"
-                >
-                  {fmtDate(d)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    );
-  };
+  const totalOutputGlobal = metrics.reduce((a, b) => a + b.output, 0);
+  const totalGoodGlobal = metrics.reduce((a, b) => a + b.good, 0);
+  const totalRejectGlobal = metrics.reduce((a, b) => a + b.reject, 0);
+  const totalReplaceGlobal = metrics.reduce((a, b) => a + b.replace, 0);
+  const avgLossRateGlobal = totalOutputGlobal > 0 ? (totalRejectGlobal / totalOutputGlobal) * 100 : 0;
 
   return (
-    <div className="space-y-4 anim-in">
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-4 flex flex-col gap-3">
-          <h3 className="card-title">Pekerjaan Dalam Proses</h3>
-          <div className="space-y-2">
-            {sets.map(s => (
-              <button
-                key={s.key}
-                onClick={() => onOpenList(`Pekerjaan ${s.label} — Belum Selesai`, s.key, s.un.map(x => x.r), 'Status belum SELESAI')}
-                className="w-full card-h flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-left bg-white"
-              >
-                <span className="w-10 h-10 rounded-lg grid place-items-center text-white font-display font-bold" style={{ background: s.color }}>
-                  {s.un.length}
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-slate-700">{s.label}</span>
-                  <span className="block text-[11px] text-slate-400">belum SELESAI · klik untuk detail</span>
-                </span>
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }}></span>
-              </button>
-            ))}
+    <div className="space-y-5 anim-in">
+      {/* 5 Kartu Summary Global */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 stagger">
+        <div className="card p-4 bg-white border-l-4 border-l-blue-500">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">TOTAL OUTPUT</span>
+            <Layers className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="mt-auto flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-            <span>Total dalam proses</span>
-            <span className="font-display font-bold text-slate-800 text-base">{totalUn}</span>
+          <div className="mt-2 font-display font-extrabold text-2xl text-slate-800">
+            {totalOutputGlobal.toLocaleString('id-ID')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">Gabungan seluruh lini</div>
+        </div>
+
+        <div className="card p-4 bg-white border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">TOTAL GOOD</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="mt-2 font-display font-extrabold text-2xl text-emerald-600">
+            {totalGoodGlobal.toLocaleString('id-ID')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">Lolos standar QC</div>
+        </div>
+
+        <div className="card p-4 bg-white border-l-4 border-l-rose-500">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">TOTAL REJECT</span>
+            <AlertTriangle className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="mt-2 font-display font-extrabold text-2xl text-rose-600">
+            {totalRejectGlobal.toLocaleString('id-ID')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">Plate/Screen rusak</div>
+        </div>
+
+        <div className="card p-4 bg-white border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">TOTAL REPLACE</span>
+            <RotateCcw className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="mt-2 font-display font-extrabold text-2xl text-amber-600">
+            {totalReplaceGlobal.toLocaleString('id-ID')}
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">Ganti / proses ulang</div>
+        </div>
+
+        <div className="card p-4 bg-white border-l-4 border-l-purple-500 col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">AVG LOSS RATE</span>
+            <Percent className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className={`mt-2 font-display font-extrabold text-2xl ${avgLossRateGlobal > 1 ? 'text-rose-600' : 'text-emerald-600'}`}>
+            {avgLossRateGlobal.toFixed(1)}%
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1">Rata-rata afval</div>
+        </div>
+      </div>
+
+      {/* Grid Komparasi Visual Output Tiap Lini */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="card p-5">
+          <h3 className="card-title mb-3">Volume Output Berdasarkan Lini</h3>
+          <div className="h-64">
+            <Bar
+              data={{
+                labels: metrics.map(m => m.label),
+                datasets: [
+                  { label: 'Good', data: metrics.map(m => m.good), backgroundColor: '#10b981', borderRadius: 4 },
+                  { label: 'Reject', data: metrics.map(m => m.reject), backgroundColor: '#f43f5e', borderRadius: 4 }
+                ]
+              }}
+              options={{ maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }}
+            />
           </div>
         </div>
 
-        <div className="card p-4 lg:col-span-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="card-title">Pie Chart — Pekerjaan Dalam Proses</h3>
-            <span className="text-[11px] text-slate-400">klik segmen untuk detail</span>
-          </div>
-          <div className="h-72 relative flex items-center justify-center">
-            {totalUn ? <Doughnut data={pieChartData} options={pieOptions} /> : <p className="text-xs text-slate-400">Tidak ada pekerjaan dalam proses</p>}
+        <div className="card p-5">
+          <h3 className="card-title mb-3">Porsi Output Lini Produksi</h3>
+          <div className="h-64 flex items-center justify-center">
+            <Doughnut
+              data={{
+                labels: metrics.map(m => m.label),
+                datasets: [
+                  {
+                    data: metrics.map(m => m.output),
+                    backgroundColor: metrics.map(m => m.color || '#3b82f6')
+                  }
+                ]
+              }}
+              options={{ maintainAspectRatio: false }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2">
-          <h3 className="card-title">Pekerjaan Belum Selesai (Kolom 1-7)</h3>
-          <span className="badge bg-amber-50 text-amber-700">{totalUn} baris</span>
-        </div>
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '420px' }}>
-          {renderTable(sets.flatMap(s => s.un))}
-        </div>
-      </div>
-
-      <div className="card overflow-hidden">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-wrap gap-2">
-          <h3 className="card-title">Pekerjaan Selesai (H-2 s/d Hari Ini)</h3>
-          <span className="badge bg-emerald-50 text-emerald-700">{totalDone} baris · {fmtDate(minDate)} – {fmtDate(t0)}</span>
-        </div>
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '420px' }}>
-          {renderTable(sets.flatMap(s => s.done))}
+      {/* Tabel Ringkasan Tiap Lini */}
+      <div className="card p-5">
+        <h3 className="card-title mb-1">Rincian Efisiensi Tiap Lini Produksi</h3>
+        <p className="text-xs text-slate-500 mb-4">Klik nama lini untuk membuka daftar transaksi detail</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
+                <th className="py-2.5 px-3">Lini Proses</th>
+                <th className="py-2.5 px-3">Satuan</th>
+                <th className="py-2.5 px-3">Total Output</th>
+                <th className="py-2.5 px-3">Good</th>
+                <th className="py-2.5 px-3">Reject</th>
+                <th className="py-2.5 px-3">Replace</th>
+                <th className="py-2.5 px-3">Loss Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {metrics.map(m => (
+                <tr
+                  key={m.key}
+                  onClick={() => onOpenList?.(`Rekap Transaksi ${m.label}`, m.key, m.rows)}
+                  className="hover:bg-slate-50 transition cursor-pointer"
+                >
+                  <td className="py-2.5 px-3 font-bold text-slate-800 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: m.color }}></span>
+                    {m.label}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">{m.unit}</td>
+                  <td className="py-2.5 px-3 font-bold">{m.output.toLocaleString('id-ID')}</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-semibold">{m.good.toLocaleString('id-ID')}</td>
+                  <td className="py-2.5 px-3 text-rose-600 font-semibold">{m.reject.toLocaleString('id-ID')}</td>
+                  <td className="py-2.5 px-3 text-amber-600">{m.replace.toLocaleString('id-ID')}</td>
+                  <td className="py-2.5 px-3 font-bold">{m.lossRate.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
