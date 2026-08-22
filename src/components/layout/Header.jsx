@@ -1,33 +1,28 @@
 import React from 'react';
-import { fmtPeriodRange } from '../../utils/formatters';
 import { Menu, RotateCcw, Printer, Calendar } from 'lucide-react';
+import { iso, parseDateVal } from '../../utils/formatters';
 
 export default function Header({
-  view,
   period,
   onPeriodChange,
   onReset,
   onOpenPrint,
   onToggleSidebar
 }) {
-  const handleDateChange = (type, val) => {
+  const fromStr = period?.from ? iso(period.from) : '';
+  const toStr = period?.to ? iso(period.to) : '';
+
+  const handleDateChange = (type, valStr) => {
     if (!onPeriodChange) return;
+    const parsed = parseDateVal(valStr);
     onPeriodChange(prev => ({
       ...prev,
-      [type]: val ? new Date(val) : null
+      [type]: parsed
     }));
   };
 
-  const fromStr = period?.from instanceof Date && !isNaN(period.from.getTime())
-    ? period.from.toISOString().split('T')[0]
-    : '';
-
-  const toStr = period?.to instanceof Date && !isNaN(period.to.getTime())
-    ? period.to.toISOString().split('T')[0]
-    : '';
-
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6 py-3">
+    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
@@ -47,7 +42,7 @@ export default function Header({
           </div>
         </div>
 
-        {/* Filter Rentang Tanggal & Tombol Aksi */}
+        {/* Filter Rentang Tanggal */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200">
             <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
@@ -76,7 +71,7 @@ export default function Header({
 
           <button
             onClick={onOpenPrint}
-            className="btn bg-slate-900 hover:bg-slate-800 text-white text-xs !py-1.5 !px-3 font-semibold rounded-xl flex items-center gap-1.5"
+            className="bg-slate-900 hover:bg-slate-800 text-white text-xs py-2 px-3 font-semibold rounded-xl flex items-center gap-1.5 shadow-sm transition"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print / PDF</span>
