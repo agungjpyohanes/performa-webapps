@@ -16,12 +16,11 @@ export const cell = (row, idx) => {
   return val === null || val === undefined ? '' : String(val);
 };
 
-// Parser Tanggal Universal (Mendukung Supabase ISO, Timestamp, & String)
+// Parser Tanggal Universal
 export const parseDateVal = (val) => {
   if (!val) return null;
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
 
-  // Jika string format ISO atau Timestamp (YYYY-MM-DD...)
   if (typeof val === 'string') {
     const s = val.trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
@@ -29,7 +28,6 @@ export const parseDateVal = (val) => {
       const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       return isNaN(d.getTime()) ? null : d;
     }
-    // Jika format DD/MM/YYYY atau DD-MM-YYYY
     if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)) {
       const parts = s.split(/[\/\-]/);
       const d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
@@ -39,13 +37,37 @@ export const parseDateVal = (val) => {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // Jika epoch timestamp
   if (typeof val === 'number') {
     const d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
   }
 
   return null;
+};
+
+// Format Date ke string ISO Date (YYYY-MM-DD)
+export const iso = (d) => {
+  const parsed = parseDateVal(d);
+  if (!parsed) return '';
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Konversi Hex Color ke RGBA string
+export const hexA = (hex, alpha = 0.2) => {
+  if (!hex || typeof hex !== 'string') return `rgba(59, 130, 246, ${alpha})`;
+  let c = hex.replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map(x => x + x).join('');
+  }
+  const numVal = parseInt(c, 16);
+  if (isNaN(numVal)) return `rgba(59, 130, 246, ${alpha})`;
+  const r = (numVal >> 16) & 255;
+  const g = (numVal >> 8) & 255;
+  const b = numVal & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
 // Normalisasi ke awal hari (00:00:00.000)
@@ -66,7 +88,7 @@ export const endOfDay = (d) => {
   return dateObj;
 };
 
-// Format tanggal tampilan Indonesia (Contoh: 22 Agu 2026)
+// Format tanggal tampilan Indonesia
 export const fmtDate = (d) => {
   const parsed = parseDateVal(d);
   if (!parsed) return '-';
