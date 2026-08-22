@@ -12,17 +12,18 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
-import { Users, Clock, Search, Filter } from 'lucide-react';
+import { Users, Clock, Search, Filter, Briefcase } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function OperatorShiftView({ data, period }) {
   const [selectedProcess, setSelectedProcess] = useState('ALL');
+  const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('OP');
   const [searchQuery, setSearchQuery] = useState('');
 
   const targetKeys = selectedProcess === 'ALL' ? PROD_KEYS : [selectedProcess];
 
-  // Ekstraksi seluruh baris sesuai filter
+  // Ekstraksi seluruh baris sesuai filter lini dan tanggal
   const allRows = useMemo(() => {
     const res = [];
     targetKeys.forEach(key => {
@@ -51,23 +52,22 @@ export default function OperatorShiftView({ data, period }) {
           replace: num(r[cfg.i.ganti]),
           operator: cell(r, cfg.i.op).trim() || 'Unassigned',
           shift: cell(r, cfg.i.shift).toUpperCase().trim() || 'NON-SHIFT',
-          po: cell(r, 17).trim()
+          po: cell(r, 17).trim() || 'Tanpa PO'
         });
       });
     });
     return res;
   }, [data, targetKeys, period]);
 
-  // Agregasi Operator & PO
+  // Agregasi Terpisah: Khusus Operator
   const operatorStats = useMemo(() => {
     const map = new Map();
     allRows.forEach(r => {
-      const opKey = r.po ? `${r.operator} (${r.po})` : r.operator;
-      const e = map.get(opKey) || { name: opKey, operator: r.operator, po: r.po, good: 0, reject: 0, replace: 0, process: r.process };
+      const e = map.get(r.operator) || { name: r.operator, good: 0, reject: 0, replace: 0, process: r.process };
       e.good += r.good;
       e.reject += r.reject;
       e.replace += r.replace;
-      map.set(opKey, e);
+      map.set(r.operator, e);
     });
 
     return [...map.values()]
@@ -79,11 +79,34 @@ export default function OperatorShiftView({ data, period }) {
       .sort((a, b) => b.output - a.output);
   }, [allRows]);
 
-  const filteredOperators = useMemo(() => {
-    if (!searchQuery.trim()) return operatorStats;
+  // Agregasi Terpisah: Khusus PO (Customer)
+  const poStats = useMemo(() => {
+    const map = new Map();
+    allRows.forEach(r => {
+      const e = map.get(r.po) || { name: r.po, good: 0, reject: 0, replace: 0, process: r.process };
+      e.good += r.good;
+      e.reject += r.reject;
+      e.replace += r.replace;
+      map.set(r.po, e);
+    });
+
+    return [...map.values()]
+      .map(o => {
+        const output = o.good + o.reject;
+        const lossRate = output > 0 ? (o.reject / output) * 100 : 0;
+        return { ...o, output, lossRate };
+      })
+      .sort((a, b) => b.output - a.output);
+  }, [allRows]);
+
+  // Data aktif berdasarkan tab yang dipilih
+  const activeData = activeLeaderboardTab === 'OP' ? operatorStats : poStats;
+
+  const filteredData = useMemo(() => {
+    if (!searchQuery.trim()) return activeData;
     const q = searchQuery.toLowerCase();
-    return operatorStats.filter(o => o.name.toLowerCase().includes(q));
-  }, [operatorStats, searchQuery]);
+    return activeData.filter(o => o.name.toLowerCase().includes(q));
+  }, [activeData, searchQuery]);
 
   // Agregasi Shift
   const shiftStats = useMemo(() => {
@@ -175,23 +198,55 @@ export default function OperatorShiftView({ data, period }) {
         </div>
       </div>
 
-      {/* Tabel Leaderboard Operator */}
+      {/* Tabel Leaderboard Terpisah (Operator vs PO) */}
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h3 className="card-title">Ranking Produktivitas Operator & PO</h3>
+            <div className="flex items-center gap-2">
+              {activeLeaderboardTab === 'OP' ? (
+                <Users className="w-5 h-5 text-indigo-600" />
+              ) : (
+                <Briefcase className="w-5 h-5 text-amber-600" />
+              )}
+              <h3 className="card-title">
+                {activeLeaderboardTab === 'OP' ? 'Ranking Produktivitas Operator' : 'Ranking Produktivitas PO (Customer)'}
+              </h3>
+            </div>
             <p className="text-xs text-slate-500">Daftar peringkat berdasarkan volume output dan rasio reject terkecil</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari Operator / PO..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="bg-transparent text-xs outline-none w-full text-slate-700"
-            />
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Toggle Tab Operator vs PO */}
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <button
+                onClick={() => { setActiveLeaderboardTab('OP'); setSearchQuery(''); }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  activeLeaderboardTab === 'OP' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'
+                }`}
+              >
+                Operator
+              </button>
+              <button
+                onClick={() => { setActiveLeaderboardTab('PO'); setSearchQuery(''); }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                  activeLeaderboardTab === 'PO' ? 'bg-white shadow text-amber-700' : 'text-slate-500'
+                }`}
+              >
+                PO
+              </button>
+            </div>
+
+            {/* Input Pencarian */}
+            <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-full sm:w-64">
+              <Search className="w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder={activeLeaderboardTab === 'OP' ? 'Cari Operator...' : 'Cari PO...'}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs outline-none w-full text-slate-700"
+              />
+            </div>
           </div>
         </div>
 
@@ -200,8 +255,8 @@ export default function OperatorShiftView({ data, period }) {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
                 <th className="py-2.5 px-3">Rank</th>
-                <th className="py-2.5 px-3">Nama Operator / PO</th>
-                <th className="py-2.5 px-3">Lini</th>
+                <th className="py-2.5 px-3">{activeLeaderboardTab === 'OP' ? 'Nama Operator' : 'Nama PO'}</th>
+                <th className="py-2.5 px-3">Lini Terakhir</th>
                 <th className="py-2.5 px-3">Total Output</th>
                 <th className="py-2.5 px-3">Good</th>
                 <th className="py-2.5 px-3">Reject</th>
@@ -210,7 +265,7 @@ export default function OperatorShiftView({ data, period }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOperators.map((o, idx) => (
+              {filteredData.map((o, idx) => (
                 <tr key={o.name} className="hover:bg-slate-50/80 transition">
                   <td className="py-2 px-3 font-bold text-slate-400">#{idx + 1}</td>
                   <td className="py-2 px-3 font-semibold text-slate-800">{o.name}</td>
