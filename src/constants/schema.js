@@ -1,14 +1,8 @@
-// Konfigurasi Skema, Headers & Indeks Kolom Database Prepress
 export const SHEETS = {
   db_ctcp: {
     label: 'CTCP Offset',
     unit: 'Plate',
-    headers: [
-      'id_ctcp', 'jop_name', 'no_jop', 'no_plate', 'date', 
-      'mesin_expose', 'mesin_cetak', 'jenis_kertas', 'plate_baru', 
-      'plate_ganti', 'plate_baik', 'plate_rusak', 'sebab_ganti', 
-      'permintaan_khusus', 'sebab_rusak', 'shift', 'nama_op', 'nama_po'
-    ],
+    color: '#8b5cf6',
     i: {
       id: 0,
       jop: 1,
@@ -32,21 +26,16 @@ export const SHEETS = {
       po: 17
     },
     cards: {
-      baik: 'Total Plate Baik',
-      rusak: 'Total Plate Rusak',
-      ganti: 'Total Plate Ganti',
-      pakai: 'Total Output Plate'
+      baik: 'Total Plate Baik (pcs)',
+      rusak: 'Total Plate Rusak (pcs)',
+      ganti: 'Total Plate Ganti (pcs)',
+      pakai: 'Total Penggunaan Plate (pcs)'
     }
   },
   db_ctp: {
     label: 'CTP Thermal',
     unit: 'Plate',
-    headers: [
-      'id_ctp', 'jop_name', 'no_jop', 'no_plate', 'date', 
-      'mesin_expose', 'mesin_cetak', 'jenis_kertas', 'plate_baru', 
-      'plate_ganti', 'plate_baik', 'plate_rusak', 'sebab_ganti', 
-      'permintaan_khusus', 'sebab_rusak', 'shift', 'nama_op'
-    ],
+    color: '#10b981',
     i: {
       id: 0,
       jop: 1,
@@ -70,20 +59,16 @@ export const SHEETS = {
       po: -1
     },
     cards: {
-      baik: 'Total Plate Baik',
-      rusak: 'Total Plate Rusak',
-      ganti: 'Total Plate Ganti',
-      pakai: 'Total Output Plate'
+      baik: 'Total Plate Baik (pcs)',
+      rusak: 'Total Plate Rusak (pcs)',
+      ganti: 'Total Plate Ganti (pcs)',
+      pakai: 'Total Penggunaan Plate (pcs)'
     }
   },
   db_screen: {
     label: 'Screen Printing',
     unit: 'Screen',
-    headers: [
-      'id_screen', 'jop_name', 'no_jop', 'no_b', 'tipe', 
-      'status', 'date', 'jumlah_screen_bagus', 'jumlah_screen_rusak', 
-      'jumlah_screen_ganti', 'sebab_rusak', 'sebab_ganti', 'shift', 'nama_op'
-    ],
+    color: '#06b6d4',
     i: {
       id: 0,
       jop: 1,
@@ -104,21 +89,16 @@ export const SHEETS = {
       po: -1
     },
     cards: {
-      baik: 'Total Screen Baik',
-      rusak: 'Total Screen Rusak',
-      ganti: 'Total Screen Ganti',
-      pakai: 'Total Output Screen'
+      baik: 'Total Screen Baik (pcs)',
+      rusak: 'Total Screen Rusak (pcs)',
+      ganti: 'Total Screen Ganti (pcs)',
+      pakai: 'Total Penggunaan Screen (pcs)'
     }
   },
   db_flexo: {
     label: 'Flexography',
     unit: 'Plate',
-    headers: [
-      'id_flexo', 'jop_name', 'no_jop', 'no_b', 'status', 
-      'date', 'lpi', 'tebal_flexo', 'mesin_cetak', 'posisi_rip', 
-      'flexo_bagus', 'flexo_rusak', 'flexo_ganti', 'sebab_rusak', 
-      'sebab_ganti', 'shift', 'nama_op', 'nama_po'
-    ],
+    color: '#6366f1',
     i: {
       id: 0,
       jop: 1,
@@ -142,20 +122,16 @@ export const SHEETS = {
       po: 17
     },
     cards: {
-      baik: 'Total Flexo Baik',
-      rusak: 'Total Flexo Rusak',
-      ganti: 'Total Flexo Ganti',
-      pakai: 'Total Output Flexo'
+      baik: 'Total Flexo Baik (pcs)',
+      rusak: 'Total Flexo Rusak (pcs)',
+      ganti: 'Total Flexo Ganti (pcs)',
+      pakai: 'Total Penggunaan Flexo (pcs)'
     }
   },
   db_etching: {
     label: 'Etching Plate',
     unit: 'Plate',
-    headers: [
-      'id_etching', 'jop_name', 'no_jop', 'no_b', 'tipe', 
-      'status', 'date', 'tebal_plate', 'plate_baik', 'plate_rusak', 
-      'plate_ganti', 'sebab_rusak', 'sebab_ganti', 'shift', 'nama_op', 'nama_po'
-    ],
+    color: '#f59e0b',
     i: {
       id: 0,
       jop: 1,
@@ -177,24 +153,22 @@ export const SHEETS = {
       po: 15
     },
     cards: {
-      baik: 'Total Etching Baik',
-      rusak: 'Total Etching Rusak',
-      ganti: 'Total Etching Ganti',
-      pakai: 'Total Output Etching'
+      baik: 'Total Etching Baik (pcs)',
+      rusak: 'Total Etching Rusak (pcs)',
+      ganti: 'Total Etching Ganti (pcs)',
+      pakai: 'Total Penggunaan Etching (pcs)'
     }
   }
 };
 
-// Overview Sets untuk Ringkasan Global
 export const OVER_SETS = [
-  { key: 'db_ctcp', label: 'CTCP Offset', unit: 'Plate', color: '#3b82f6' },
-  { key: 'db_ctp', label: 'CTP Thermal', unit: 'Plate', color: '#06b6d4' },
-  { key: 'db_screen', label: 'Screen Printing', unit: 'Screen', color: '#f59e0b' },
-  { key: 'db_flexo', label: 'Flexography', unit: 'Plate', color: '#10b981' },
-  { key: 'db_etching', label: 'Etching Plate', unit: 'Plate', color: '#8b5cf6' }
+  { key: 'db_ctcp', label: 'CTCP Offset', unit: 'Plate', color: '#8b5cf6' },
+  { key: 'db_ctp', label: 'CTP Thermal', unit: 'Plate', color: '#10b981' },
+  { key: 'db_screen', label: 'Screen Printing', unit: 'Screen', color: '#06b6d4' },
+  { key: 'db_flexo', label: 'Flexography', unit: 'Plate', color: '#6366f1' },
+  { key: 'db_etching', label: 'Etching Plate', unit: 'Plate', color: '#f59e0b' }
 ];
 
-// Form Input Link
 export const FORMS = {
   db_ctcp: { title: 'Form Input CTCP Offset', desc: 'Input laporan harian produksi plate CTCP', url: '' },
   db_ctp: { title: 'Form Input CTP Thermal', desc: 'Input laporan harian produksi plate CTP', url: '' },
@@ -203,7 +177,6 @@ export const FORMS = {
   db_etching: { title: 'Form Input Etching Plate', desc: 'Input laporan harian proses etching plate', url: '' }
 };
 
-// Kategori JOP
 export const JOP_CATS = [
   ['O', 'Offset'],
   ['F', 'Flexo'],
@@ -212,31 +185,14 @@ export const JOP_CATS = [
   ['D', 'Digital']
 ];
 
-// Warna Palette Kategori
 export const CAT_COLORS = {
-  Offset: '#3b82f6',
-  Flexo: '#10b981',
-  Screen: '#f59e0b',
-  Etching: '#8b5cf6',
+  Offset: '#8b5cf6',
+  Flexo: '#6366f1',
+  Screen: '#06b6d4',
+  Etching: '#f59e0b',
   Digital: '#ec4899',
   Lainnya: '#64748b'
 };
 
-// Kunci Lini Produksi
-export const PROD_KEYS = [
-  'db_ctcp',
-  'db_ctp',
-  'db_screen',
-  'db_flexo',
-  'db_etching'
-];
-
-// Semua Kunci Sheet (Termasuk db_user untuk autentikasi)
-export const ALL_KEYS = [
-  'db_ctcp',
-  'db_ctp',
-  'db_screen',
-  'db_flexo',
-  'db_etching',
-  'db_user'
-];
+export const PROD_KEYS = ['db_ctcp', 'db_ctp', 'db_screen', 'db_flexo', 'db_etching'];
+export const ALL_KEYS = ['db_ctcp', 'db_ctp', 'db_screen', 'db_flexo', 'db_etching', 'db_user'];
