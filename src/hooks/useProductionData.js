@@ -165,7 +165,7 @@ export function useProductionData() {
       setData(newData);
       setStatus(newStatus);
 
-      // Hitung Tanggal Otomatis (Dari awal bulan data terbaru)
+      // Hitung rentang tanggal minimum & maksimum aktual dari database
       const allTimestamps = [];
       PROD_KEYS.forEach((k) => {
         const cfg = SHEETS[k];
