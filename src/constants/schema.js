@@ -117,6 +117,15 @@ export const SHEETS = {
   }
 };
 
+// Konfigurasi Overview Sets untuk Ringkasan Global
+export const OVER_SETS = [
+  { key: 'db_ctcp', label: 'CTCP Offset', unit: 'Plate', color: '#3b82f6' },
+  { key: 'db_ctp', label: 'CTP Thermal', unit: 'Plate', color: '#06b6d4' },
+  { key: 'db_screen', label: 'Screen Printing', unit: 'Screen', color: '#f59e0b' },
+  { key: 'db_flexo', label: 'Flexography', unit: 'Plate', color: '#10b981' },
+  { key: 'db_etching', label: 'Etching Plate', unit: 'Plate', color: '#8b5cf6' }
+];
+
 // Konfigurasi Link/Form Input Entry Data
 export const FORMS = {
   db_ctcp: {
