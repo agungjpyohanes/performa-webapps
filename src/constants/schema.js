@@ -1,8 +1,15 @@
+// Konfigurasi Skema Database, Indeks Kolom, dan Standardisasi Istilah
 export const SHEETS = {
   db_ctcp: {
     label: 'CTCP Offset',
     unit: 'Plate',
     color: '#8b5cf6',
+    headers: [
+      'id_ctcp', 'jop_name', 'no_jop', 'no_plate', 'date', 
+      'mesin_expose', 'mesin_cetak', 'jenis_kertas', 'plate_baru', 
+      'plate_ganti', 'plate_baik', 'plate_rusak', 'sebab_ganti', 
+      'permintaan_khusus', 'sebab_rusak', 'shift', 'nama_op', 'nama_po'
+    ],
     i: {
       id: 0,
       jop: 1,
@@ -36,6 +43,12 @@ export const SHEETS = {
     label: 'CTP Thermal',
     unit: 'Plate',
     color: '#10b981',
+    headers: [
+      'id_ctp', 'jop_name', 'no_jop', 'no_plate', 'date', 
+      'mesin_expose', 'mesin_cetak', 'jenis_kertas', 'plate_baru', 
+      'plate_ganti', 'plate_baik', 'plate_rusak', 'sebab_ganti', 
+      'permintaan_khusus', 'sebab_rusak', 'shift', 'nama_op'
+    ],
     i: {
       id: 0,
       jop: 1,
@@ -69,6 +82,11 @@ export const SHEETS = {
     label: 'Screen Printing',
     unit: 'Screen',
     color: '#06b6d4',
+    headers: [
+      'id_screen', 'jop_name', 'no_jop', 'no_b', 'tipe', 
+      'status', 'date', 'jumlah_screen_bagus', 'jumlah_screen_rusak', 
+      'jumlah_screen_ganti', 'sebab_rusak', 'sebab_ganti', 'shift', 'nama_op'
+    ],
     i: {
       id: 0,
       jop: 1,
@@ -99,6 +117,12 @@ export const SHEETS = {
     label: 'Flexography',
     unit: 'Plate',
     color: '#6366f1',
+    headers: [
+      'id_flexo', 'jop_name', 'no_jop', 'no_b', 'status', 
+      'date', 'lpi', 'tebal_flexo', 'mesin_cetak', 'posisi_rip', 
+      'flexo_bagus', 'flexo_rusak', 'flexo_ganti', 'sebab_rusak', 
+      'sebab_ganti', 'shift', 'nama_op', 'nama_po'
+    ],
     i: {
       id: 0,
       jop: 1,
@@ -132,6 +156,11 @@ export const SHEETS = {
     label: 'Etching Plate',
     unit: 'Plate',
     color: '#f59e0b',
+    headers: [
+      'id_etching', 'jop_name', 'no_jop', 'no_b', 'tipe', 
+      'status', 'date', 'tebal_plate', 'plate_baik', 'plate_rusak', 
+      'plate_ganti', 'sebab_rusak', 'sebab_ganti', 'shift', 'nama_op', 'nama_po'
+    ],
     i: {
       id: 0,
       jop: 1,
