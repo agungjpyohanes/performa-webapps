@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProductionData } from './hooks/useProductionData';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { SHEETS } from './constants/schema';
-import { fmtDate, num, cell, fmtPeriodRange, startOfDay, parseDateVal } from './utils/formatters';
+import { fmtDate, num, cell, parseDateVal, startOfDay } from './utils/formatters';
 
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -86,26 +86,22 @@ export default function App() {
 
   const openMetricModal = (key, metric, rows) => {
     const cfg = SHEETS[key] || { unit: 'Unit', cards: {}, i: { baik: 10, rusak: 11, ganti: 9 } };
-    let list = [], valFn = null, causeIdx = null, valLabel = '';
+    let list = [], valFn = null, causeIdx = null;
 
     if (metric === 'baik') {
       list = rows.filter(r => num(r[cfg.i.baik]) > 0);
       valFn = r => num(r[cfg.i.baik]);
-      valLabel = (cfg.unit || 'Unit') + ' Good';
     } else if (metric === 'rusak') {
       list = rows.filter(r => num(r[cfg.i.rusak]) > 0);
       valFn = r => num(r[cfg.i.rusak]);
-      valLabel = (cfg.unit || 'Unit') + ' Reject';
       causeIdx = cfg.i.penyRusak;
     } else if (metric === 'ganti') {
       list = rows.filter(r => num(r[cfg.i.ganti]) > 0);
       valFn = r => num(r[cfg.i.ganti]);
-      valLabel = (cfg.unit || 'Unit') + ' Replace';
       causeIdx = cfg.i.penyGanti;
     } else {
       list = rows;
       valFn = r => num(r[cfg.i.baik]) + num(r[cfg.i.rusak]);
-      valLabel = 'Output (Good + Reject)';
     }
 
     const stateObj = {
@@ -115,7 +111,6 @@ export default function App() {
       rows: list,
       metric,
       valFn,
-      valLabel,
       causeIdx,
       subtitle: `Total ${list.reduce((s, r) => s + valFn(r), 0).toLocaleString('id-ID')} · klik baris untuk detail`
     };
