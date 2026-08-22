@@ -1,4 +1,4 @@
-// Konversi aman nilai ke angka
+// Konversi nilai apa pun ke angka yang valid
 export const num = (v) => {
   if (v === null || v === undefined || v === '') return 0;
   if (typeof v === 'number') return isNaN(v) ? 0 : v;
@@ -7,7 +7,7 @@ export const num = (v) => {
   return isNaN(n) ? 0 : n;
 };
 
-// Ambil teks sel matriks dengan aman
+// Ambil teks sel matriks secara aman
 export const cell = (row, idx) => {
   if (!row || !Array.isArray(row) || idx === undefined || idx < 0 || idx >= row.length) {
     return '';
@@ -16,7 +16,7 @@ export const cell = (row, idx) => {
   return val === null || val === undefined ? '' : String(val);
 };
 
-// Parser Tanggal Universal
+// Parser Tanggal Universal (Mendukung Supabase ISO, Timestamp, & DD/MM/YYYY)
 export const parseDateVal = (val) => {
   if (!val) return null;
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
@@ -45,7 +45,7 @@ export const parseDateVal = (val) => {
   return null;
 };
 
-// Format Date ke ISO Date string (YYYY-MM-DD)
+// Format Date ke string ISO Date (YYYY-MM-DD)
 export const iso = (d) => {
   const parsed = parseDateVal(d);
   if (!parsed) return '';
@@ -70,7 +70,7 @@ export const hexA = (hex, alpha = 0.2) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Klasifikasi Kategori JOP berdasarkan kode/nama JOP
+// Klasifikasi Kategori JOP berdasarkan kode awal atau teks JOP
 export const jopCat = (jopName) => {
   const s = String(jopName || '').toUpperCase();
   if (s.startsWith('O') || s.includes('OFFSET')) return 'Offset';
@@ -110,7 +110,7 @@ export const endOfDay = (d) => {
   return dateObj;
 };
 
-// Format tanggal tampilan Indonesia
+// Format tanggal tampilan Indonesia (misal: 22 Agu 2026)
 export const fmtDate = (d) => {
   const parsed = parseDateVal(d);
   if (!parsed) return '-';
