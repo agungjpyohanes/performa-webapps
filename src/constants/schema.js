@@ -155,6 +155,16 @@ export const JOP_CATS = [
   ['D', 'Digital']
 ];
 
+// Warna Palette Kategori untuk Visualisasi / Chart
+export const CAT_COLORS = {
+  Offset: '#3b82f6',
+  Flexo: '#10b981',
+  Screen: '#f59e0b',
+  Etching: '#8b5cf6',
+  Digital: '#ec4899',
+  Lainnya: '#64748b'
+};
+
 // Kunci Lini Produksi
 export const PROD_KEYS = [
   'db_ctcp',
